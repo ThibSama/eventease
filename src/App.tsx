@@ -1,24 +1,14 @@
-import { NavigationContainer } from '@react-navigation/native';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from "@react-navigation/native";
+
+import { AppProvider } from "./context/AppContext";
+import { AppNavigator } from "./navigation/AppNavigator";
 
 export function App() {
   return (
-    <NavigationContainer>
-      <View style={styles.container}>
-        <Text style={styles.title}>EventEase</Text>
-      </View>
-    </NavigationContainer>
+    <AppProvider>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </AppProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-});
