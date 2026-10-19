@@ -31,4 +31,5 @@ export type Event = {
 export type RootStackParamList = {
   Auth: undefined;
   Events: undefined;
+  EventForm: undefined;
 };

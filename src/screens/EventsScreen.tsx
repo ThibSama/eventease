@@ -2,16 +2,28 @@
 // IMPORTS
 // ============================================================================
 
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Button, StyleSheet, Text, View } from "react-native";
 
 import { useApp } from "../hooks/useApp";
+import type { RootStackParamList } from "../types";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type EventsScreenProps = NativeStackScreenProps<RootStackParamList, "Events">;
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-export function EventsScreen() {
-  const { user, logout } = useApp();
+export function EventsScreen({ navigation }: EventsScreenProps) {
+  const { events, user, logout } = useApp();
+
+  function handleAddEvent() {
+    navigation.navigate("EventForm");
+  }
 
   return (
     <View style={styles.container}>
@@ -19,7 +31,15 @@ export function EventsScreen() {
 
       <Text style={styles.email}>Connecté avec {user?.email}</Text>
 
-      <Button title="Déconnexion" onPress={logout} />
+      <Text style={styles.count}>
+        {events.length} événement{events.length > 1 ? "s" : ""}
+      </Text>
+
+      <View style={styles.actions}>
+        <Button title="Ajouter un événement" onPress={handleAddEvent} />
+
+        <Button title="Déconnexion" onPress={logout} />
+      </View>
     </View>
   );
 }
@@ -39,6 +59,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   email: {
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  count: {
+    marginBottom: 24,
+  },
+  actions: {
+    gap: 12,
   },
 });
