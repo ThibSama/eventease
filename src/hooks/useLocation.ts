@@ -29,11 +29,14 @@ export function useLocation() {
 
   const [status, setStatus] = useState<UserLocationStatus>("loading");
 
+  // --- Demande de localisation ----------------------------------------------
+
   useEffect(() => {
     let active = true;
 
     async function loadLocation() {
       try {
+        // Seule la localisation au premier plan est nécessaire à l'application.
         const permission = await Location.requestForegroundPermissionsAsync();
 
         if (!active) {
@@ -45,6 +48,7 @@ export function useLocation() {
           return;
         }
 
+        // Une position ponctuelle suffit pour calculer la distance aux événements.
         const position = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });

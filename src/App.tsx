@@ -9,9 +9,10 @@ import { AppProvider } from "./context/AppContext";
 import { AppNavigator } from "./navigation/AppNavigator";
 
 // ============================================================================
-// CALENDAR LOCALE
+// LOCALE DU CALENDRIER
 // ============================================================================
 
+// La configuration est centralisée ici pour garder tous les calendriers en français.
 LocaleConfig.locales.fr = {
   monthNames: [
     "Janvier",
@@ -57,7 +58,7 @@ LocaleConfig.locales.fr = {
 LocaleConfig.defaultLocale = "fr";
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function App() {

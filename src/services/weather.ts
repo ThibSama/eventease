@@ -33,10 +33,11 @@ type WeatherResponse = {
 
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
+// Open-Meteo limite ici la fenêtre de prévision utilisée par l'application.
 const FORECAST_DAYS = 16;
 
 // ============================================================================
-// HELPERS
+// UTILITAIRES
 // ============================================================================
 
 function formatLocalDate(date: Date) {
@@ -94,7 +95,7 @@ function getWeatherCondition(code: number) {
 }
 
 // ============================================================================
-// FORECAST AVAILABILITY
+// DISPONIBILITÉ DES PRÉVISIONS
 // ============================================================================
 
 export function isWeatherForecastDateAvailable(date: string) {
@@ -116,7 +117,7 @@ export function isWeatherForecastDateAvailable(date: string) {
 }
 
 // ============================================================================
-// WEATHER
+// MÉTÉO
 // ============================================================================
 
 export async function getEventWeather(
@@ -128,6 +129,7 @@ export async function getEventWeather(
     return null;
   }
 
+  // La météo est un bonus : une erreur réseau est convertie en absence de données.
   try {
     const dailyVariables = [
       "weather_code",

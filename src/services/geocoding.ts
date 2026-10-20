@@ -27,7 +27,7 @@ type GeocodingResponse = {
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 
 // ============================================================================
-// GEOCODING
+// GÉOCODAGE
 // ============================================================================
 
 export async function geocodeLocation(
@@ -39,6 +39,7 @@ export async function geocodeLocation(
     return null;
   }
 
+  // Le géocodage est optionnel : un échec renvoie null sans bloquer le CRUD.
   try {
     const url =
       `${GEOCODING_URL}` +

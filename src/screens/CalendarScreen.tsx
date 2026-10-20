@@ -16,17 +16,23 @@ import {
 } from "../utils/validation";
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function CalendarScreen() {
   const { events } = useApp();
 
+  // --- Date sélectionnée -----------------------------------------------------
+
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
+
+  // --- Événements du jour ----------------------------------------------------
 
   const eventsForSelectedDate = events
     .filter((event) => event.date === selectedDate)
     .sort(sortEventsChronologically);
+
+  // --- Marqueurs du calendrier ----------------------------------------------
 
   const markedDates: Record<
     string,
@@ -52,9 +58,13 @@ export function CalendarScreen() {
     selected: true,
   };
 
+  // --- Sélection -------------------------------------------------------------
+
   function handleDayPress(day: DateData) {
     setSelectedDate(day.dateString);
   }
+
+  // --- Rendu des événements --------------------------------------------------
 
   function renderEvent({ item }: { item: Event }) {
     const eventPast = isEventPast(item.date, item.time);
@@ -77,6 +87,8 @@ export function CalendarScreen() {
       </View>
     );
   }
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View style={styles.container}>

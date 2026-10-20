@@ -25,11 +25,13 @@ type EventFormScreenProps = NativeStackScreenProps<
 >;
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
   const { events, addEvent, updateEvent } = useApp();
+
+  // --- Résolution de l'événement --------------------------------------------
 
   const eventId = route.params?.eventId;
 
@@ -46,6 +48,8 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       </View>
     );
   }
+
+  // --- Résolution du lieu ----------------------------------------------------
 
   async function resolveLocation(
     locationName: string,
@@ -69,10 +73,13 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       return geocodedLocation;
     }
 
+    // Le texte saisi est conservé si le géocodage est indisponible.
     return {
       name: normalizedLocation,
     };
   }
+
+  // --- Enregistrement --------------------------------------------------------
 
   async function handleSubmit(values: EventFormValues) {
     const location = await resolveLocation(values.locationName);
@@ -106,6 +113,8 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
     navigation.goBack();
   }
 
+  // --- Valeurs initiales -----------------------------------------------------
+
   const initialValues = existingEvent
     ? {
         title: existingEvent.title,
@@ -115,6 +124,8 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         locationName: existingEvent.location?.name ?? "",
       }
     : undefined;
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View style={styles.container}>

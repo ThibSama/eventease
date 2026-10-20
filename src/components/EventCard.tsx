@@ -24,7 +24,7 @@ type EventCardProps = {
 };
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function EventCard({
@@ -35,7 +35,11 @@ export function EventCard({
   onDelete,
   onToggleParticipated,
 }: EventCardProps) {
+  // --- État de l'événement ---------------------------------------------------
+
   const eventPast = isEventPast(event.date, event.time);
+
+  // --- Localisation et distance ---------------------------------------------
 
   const eventCoordinates =
     event.location?.latitude !== undefined &&
@@ -51,12 +55,17 @@ export function EventCard({
       ? calculateDistanceKm(userCoordinates, eventCoordinates)
       : null;
 
+  // --- Météo ----------------------------------------------------------------
+
+  // La météo reste optionnelle et n'est chargée que pour les événements futurs.
   const { weather, status: weatherStatus } = useEventWeather({
     date: event.date,
     latitude: eventCoordinates?.latitude,
     longitude: eventCoordinates?.longitude,
     enabled: !eventPast,
   });
+
+  // --- Actions ---------------------------------------------------------------
 
   function handleEdit() {
     onEdit(event.id);
@@ -69,6 +78,8 @@ export function EventCard({
   function handleToggleParticipated() {
     onToggleParticipated(event.id);
   }
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View style={styles.card}>
