@@ -8,7 +8,12 @@ import { Calendar, type DateData } from "react-native-calendars";
 
 import { useApp } from "../hooks/useApp";
 import type { Event } from "../types";
-import { formatEventDate, getTodayDate } from "../utils/validation";
+import {
+  formatEventDate,
+  getTodayDate,
+  isEventPast,
+  sortEventsChronologically,
+} from "../utils/validation";
 
 // ============================================================================
 // COMPONENT
@@ -21,7 +26,7 @@ export function CalendarScreen() {
 
   const eventsForSelectedDate = events
     .filter((event) => event.date === selectedDate)
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .sort(sortEventsChronologically);
 
   const markedDates: Record<
     string,
@@ -52,14 +57,22 @@ export function CalendarScreen() {
   }
 
   function renderEvent({ item }: { item: Event }) {
+    const eventPast = isEventPast(item.date, item.time);
+
     return (
       <View style={styles.eventCard}>
+        <Text style={styles.eventTime}>{item.time}</Text>
+
         <Text style={styles.eventTitle}>{item.title}</Text>
 
         <Text style={styles.eventDescription}>{item.description}</Text>
 
+        <Text style={styles.status}>
+          Statut : {eventPast ? "Passé" : "À venir"}
+        </Text>
+
         <Text style={styles.participation}>
-          {item.participated ? "Participé" : "Non participé"}
+          Participation : {item.participated ? "Participé" : "Non participé"}
         </Text>
       </View>
     );
@@ -129,6 +142,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
+  eventTime: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
   eventTitle: {
     fontSize: 18,
     fontWeight: "600",
@@ -136,6 +154,10 @@ const styles = StyleSheet.create({
   },
   eventDescription: {
     marginBottom: 12,
+  },
+  status: {
+    fontWeight: "600",
+    marginBottom: 4,
   },
   participation: {
     fontWeight: "500",
