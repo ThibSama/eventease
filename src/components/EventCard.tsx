@@ -13,15 +13,30 @@ import type { Event } from "../types";
 type EventCardProps = {
   event: Event;
   onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onToggleParticipated: (id: string) => void;
 };
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-export function EventCard({ event, onEdit }: EventCardProps) {
+export function EventCard({
+  event,
+  onEdit,
+  onDelete,
+  onToggleParticipated,
+}: EventCardProps) {
   function handleEdit() {
     onEdit(event.id);
+  }
+
+  function handleDelete() {
+    onDelete(event.id);
+  }
+
+  function handleToggleParticipated() {
+    onToggleParticipated(event.id);
   }
 
   return (
@@ -37,7 +52,18 @@ export function EventCard({ event, onEdit }: EventCardProps) {
       </Text>
 
       <View style={styles.actions}>
+        <Button
+          title={
+            event.participated
+              ? "Annuler la participation"
+              : "Marquer comme participé"
+          }
+          onPress={handleToggleParticipated}
+        />
+
         <Button title="Modifier" onPress={handleEdit} />
+
+        <Button title="Supprimer" onPress={handleDelete} />
       </View>
     </View>
   );
@@ -71,6 +97,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   actions: {
+    gap: 8,
     alignItems: "flex-start",
   },
 });

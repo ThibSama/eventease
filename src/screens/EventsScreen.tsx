@@ -20,7 +20,7 @@ type EventsScreenProps = NativeStackScreenProps<RootStackParamList, "Events">;
 // ============================================================================
 
 export function EventsScreen({ navigation }: EventsScreenProps) {
-  const { events, user, logout } = useApp();
+  const { events, user, logout, deleteEvent, toggleParticipated } = useApp();
 
   function handleAddEvent() {
     navigation.navigate("EventForm");
@@ -32,8 +32,23 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
     });
   }
 
+  async function handleDeleteEvent(id: string) {
+    await deleteEvent(id);
+  }
+
+  async function handleToggleParticipated(id: string) {
+    await toggleParticipated(id);
+  }
+
   function renderEvent({ item }: { item: Event }) {
-    return <EventCard event={item} onEdit={handleEditEvent} />;
+    return (
+      <EventCard
+        event={item}
+        onEdit={handleEditEvent}
+        onDelete={handleDeleteEvent}
+        onToggleParticipated={handleToggleParticipated}
+      />
+    );
   }
 
   return (
