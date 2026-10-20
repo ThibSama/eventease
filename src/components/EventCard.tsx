@@ -4,6 +4,7 @@
 
 import { Button, StyleSheet, Text, View } from "react-native";
 
+import { useEventWeather } from "../hooks/useEventWeather";
 import type { UserCoordinates, UserLocationStatus } from "../hooks/useLocation";
 import type { Event } from "../types";
 import { calculateDistanceKm, formatDistance } from "../utils/distance";
@@ -50,6 +51,13 @@ export function EventCard({
       ? calculateDistanceKm(userCoordinates, eventCoordinates)
       : null;
 
+  const { weather, status: weatherStatus } = useEventWeather({
+    date: event.date,
+    latitude: eventCoordinates?.latitude,
+    longitude: eventCoordinates?.longitude,
+    enabled: !eventPast,
+  });
+
   function handleEdit() {
     onEdit(event.id);
   }
@@ -89,6 +97,43 @@ export function EventCard({
               Distance : coordonnées du lieu indisponibles
             </Text>
           )}
+
+          {!eventPast && eventCoordinates ? (
+            <View style={styles.weather}>
+              {weatherStatus === "loading" ? (
+                <Text>Météo : chargement...</Text>
+              ) : null}
+
+              {weatherStatus === "available" && weather ? (
+                <>
+                  <Text>Météo : {weather.condition}</Text>
+
+                  <Text>
+                    Températures : {Math.round(weather.minTemperature)}
+                    °C à {Math.round(weather.maxTemperature)}
+                    °C
+                  </Text>
+
+                  {weather.precipitationProbability !== null ? (
+                    <Text>
+                      Risque de pluie :{" "}
+                      {Math.round(weather.precipitationProbability)}%
+                    </Text>
+                  ) : null}
+                </>
+              ) : null}
+
+              {weatherStatus === "out-of-range" ? (
+                <Text>
+                  Météo : prévisions disponibles à l'approche de l'événement.
+                </Text>
+              ) : null}
+
+              {weatherStatus === "unavailable" ? (
+                <Text>Météo : indisponible.</Text>
+              ) : null}
+            </View>
+          ) : null}
         </>
       ) : null}
 
@@ -148,6 +193,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   distance: {
+    marginBottom: 6,
+  },
+  weather: {
     marginBottom: 8,
   },
   description: {
