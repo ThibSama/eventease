@@ -50,6 +50,10 @@ export function EventCard({
         {formatEventDateTime(event.date, event.time)}
       </Text>
 
+      {event.location ? (
+        <Text style={styles.location}>Lieu : {event.location.name}</Text>
+      ) : null}
+
       <Text style={styles.description}>{event.description}</Text>
 
       <Text style={styles.status}>
@@ -99,7 +103,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   date: {
+    marginBottom: 6,
+  },
+  location: {
     marginBottom: 8,
+    fontWeight: "500",
   },
   description: {
     marginBottom: 12,

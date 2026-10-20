@@ -11,6 +11,12 @@ export type User = {
 // EVENTS
 // ============================================================================
 
+export type EventLocation = {
+  name: string;
+  latitude?: number;
+  longitude?: number;
+};
+
 export type Event = {
   id: string;
   title: string;
@@ -18,11 +24,7 @@ export type Event = {
   date: string;
   time: string;
   participated: boolean;
-  location?: {
-    name: string;
-    latitude: number;
-    longitude: number;
-  };
+  location?: EventLocation;
 };
 
 export type EventFormValues = {
@@ -30,6 +32,7 @@ export type EventFormValues = {
   description: string;
   date: string;
   time: string;
+  locationName: string;
 };
 
 // ============================================================================

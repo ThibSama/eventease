@@ -19,6 +19,9 @@ export const EVENT_TITLE_MAX_LENGTH = 80;
 export const EVENT_DESCRIPTION_MIN_LENGTH = 3;
 export const EVENT_DESCRIPTION_MAX_LENGTH = 500;
 
+export const EVENT_LOCATION_MIN_LENGTH = 2;
+export const EVENT_LOCATION_MAX_LENGTH = 120;
+
 // ============================================================================
 // AUTHENTICATION VALIDATION
 // ============================================================================
@@ -62,6 +65,19 @@ export function isValidEventDescription(description: string) {
   );
 }
 
+export function isValidEventLocation(location: string) {
+  const normalizedLocation = location.trim();
+
+  if (!normalizedLocation) {
+    return true;
+  }
+
+  return (
+    normalizedLocation.length >= EVENT_LOCATION_MIN_LENGTH &&
+    normalizedLocation.length <= EVENT_LOCATION_MAX_LENGTH
+  );
+}
+
 export function isValidEventDate(date: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return false;
@@ -90,7 +106,9 @@ export function getTodayDate() {
   const today = new Date();
 
   const year = today.getFullYear();
+
   const month = String(today.getMonth() + 1).padStart(2, "0");
+
   const day = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
@@ -102,6 +120,7 @@ function getEventDateTime(date: string, time: string) {
   }
 
   const [year, month, day] = date.split("-").map(Number);
+
   const [hours, minutes] = time.split(":").map(Number);
 
   return new Date(year, month - 1, day, hours, minutes);
