@@ -4,7 +4,9 @@
 
 import { Button, StyleSheet, Text, View } from "react-native";
 
+import type { UserCoordinates, UserLocationStatus } from "../hooks/useLocation";
 import type { Event } from "../types";
+import { calculateDistanceKm, formatDistance } from "../utils/distance";
 import { formatEventDateTime, isEventPast } from "../utils/validation";
 
 // ============================================================================
@@ -13,6 +15,8 @@ import { formatEventDateTime, isEventPast } from "../utils/validation";
 
 type EventCardProps = {
   event: Event;
+  userCoordinates: UserCoordinates | null;
+  locationStatus: UserLocationStatus;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleParticipated: (id: string) => void;
@@ -24,11 +28,27 @@ type EventCardProps = {
 
 export function EventCard({
   event,
+  userCoordinates,
+  locationStatus,
   onEdit,
   onDelete,
   onToggleParticipated,
 }: EventCardProps) {
   const eventPast = isEventPast(event.date, event.time);
+
+  const eventCoordinates =
+    event.location?.latitude !== undefined &&
+    event.location?.longitude !== undefined
+      ? {
+          latitude: event.location.latitude,
+          longitude: event.location.longitude,
+        }
+      : null;
+
+  const distance =
+    userCoordinates && eventCoordinates
+      ? calculateDistanceKm(userCoordinates, eventCoordinates)
+      : null;
 
   function handleEdit() {
     onEdit(event.id);
@@ -51,7 +71,25 @@ export function EventCard({
       </Text>
 
       {event.location ? (
-        <Text style={styles.location}>Lieu : {event.location.name}</Text>
+        <>
+          <Text style={styles.location}>Lieu : {event.location.name}</Text>
+
+          {distance !== null ? (
+            <Text style={styles.distance}>
+              Distance : environ {formatDistance(distance)}
+            </Text>
+          ) : eventCoordinates ? (
+            <Text style={styles.distance}>
+              {locationStatus === "loading"
+                ? "Distance : localisation en cours..."
+                : "Distance : localisation utilisateur indisponible"}
+            </Text>
+          ) : (
+            <Text style={styles.distance}>
+              Distance : coordonnées du lieu indisponibles
+            </Text>
+          )}
+        </>
       ) : null}
 
       <Text style={styles.description}>{event.description}</Text>
@@ -106,8 +144,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   location: {
-    marginBottom: 8,
+    marginBottom: 4,
     fontWeight: "500",
+  },
+  distance: {
+    marginBottom: 8,
   },
   description: {
     marginBottom: 12,
