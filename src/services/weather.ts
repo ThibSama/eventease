@@ -17,10 +17,10 @@ export type EventWeather = {
 
 type WeatherDailyResponse = {
   time: string[];
-  weather_code: Array<number | null>;
-  temperature_2m_max: Array<number | null>;
-  temperature_2m_min: Array<number | null>;
-  precipitation_probability_max: Array<number | null>;
+  weather_code: (number | null)[];
+  temperature_2m_max: (number | null)[];
+  temperature_2m_min: (number | null)[];
+  precipitation_probability_max: (number | null)[];
 };
 
 type WeatherResponse = {

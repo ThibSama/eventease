@@ -125,7 +125,9 @@ export function EventCard({
 
               {weatherStatus === "out-of-range" ? (
                 <Text>
-                  Météo : prévisions disponibles à l'approche de l'événement.
+                  {
+                    "Météo : prévisions disponibles à l'approche de l'événement."
+                  }
                 </Text>
               ) : null}
 
