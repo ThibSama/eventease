@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { useApp } from "../hooks/useApp";
 import { AuthScreen } from "../screens/AuthScreen";
+import { EventFormScreen } from "../screens/EventFormScreen";
 import { EventsScreen } from "../screens/EventsScreen";
 import type { RootStackParamList } from "../types";
 
@@ -30,11 +31,23 @@ export function AppNavigator() {
   return (
     <Stack.Navigator>
       {user ? (
-        <Stack.Screen
-          name="Events"
-          component={EventsScreen}
-          options={{ title: "EventEase" }}
-        />
+        <>
+          <Stack.Screen
+            name="Events"
+            component={EventsScreen}
+            options={{ title: "EventEase" }}
+          />
+
+          <Stack.Screen
+            name="EventForm"
+            component={EventFormScreen}
+            options={({ route }) => ({
+              title: route.params?.eventId
+                ? "Modifier l'événement"
+                : "Nouvel événement",
+            })}
+          />
+        </>
       ) : (
         <Stack.Screen
           name="Auth"
