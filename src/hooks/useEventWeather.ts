@@ -43,6 +43,8 @@ export function useEventWeather({
   longitude,
   enabled = true,
 }: UseEventWeatherParams) {
+  // --- Éligibilité de la prévision ------------------------------------------
+
   const forecastDateAvailable = isWeatherForecastDateAvailable(date);
 
   const canLoadWeather =
@@ -53,7 +55,11 @@ export function useEventWeather({
 
   const requestKey = canLoadWeather ? `${date}:${latitude}:${longitude}` : null;
 
+  // --- Résultat de la requête ------------------------------------------------
+
   const [result, setResult] = useState<WeatherResult | null>(null);
+
+  // --- Chargement ------------------------------------------------------------
 
   useEffect(() => {
     if (!requestKey || latitude === undefined || longitude === undefined) {
@@ -85,6 +91,8 @@ export function useEventWeather({
       active = false;
     };
   }, [date, latitude, longitude, requestKey]);
+
+  // --- Résolution du statut --------------------------------------------------
 
   let status: EventWeatherStatus = "idle";
 

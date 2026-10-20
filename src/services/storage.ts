@@ -24,7 +24,7 @@ const SESSION_KEY = "@eventease/session";
 const EVENTS_KEY = "@eventease/events";
 
 // ============================================================================
-// USER STORAGE
+// STOCKAGE UTILISATEUR
 // ============================================================================
 
 export async function saveUser(user: User) {
@@ -38,7 +38,7 @@ export async function getUser(): Promise<User | null> {
 }
 
 // ============================================================================
-// SESSION STORAGE
+// STOCKAGE SESSION
 // ============================================================================
 
 export async function saveSession(user: User) {
@@ -56,7 +56,7 @@ export async function clearSession() {
 }
 
 // ============================================================================
-// EVENT STORAGE
+// STOCKAGE DES ÉVÉNEMENTS
 // ============================================================================
 
 export async function saveEvents(events: Event[]) {
@@ -77,11 +77,13 @@ export async function getEvents(): Promise<Event[]> {
       return [];
     }
 
+    // Les anciens événements sans heure sont migrés avec une valeur par défaut.
     return storedEvents.map((event) => ({
       ...event,
       time: event.time && isValidEventTime(event.time) ? event.time : "00:00",
     }));
   } catch {
+    // Un stockage illisible ne doit pas empêcher l'application de démarrer.
     return [];
   }
 }

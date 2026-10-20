@@ -14,7 +14,7 @@ type Coordinates = {
 const EARTH_RADIUS_KM = 6371;
 
 // ============================================================================
-// HELPERS
+// UTILITAIRES
 // ============================================================================
 
 function degreesToRadians(degrees: number) {
@@ -34,6 +34,7 @@ export function calculateDistanceKm(start: Coordinates, end: Coordinates) {
 
   const endLatitude = degreesToRadians(end.latitude);
 
+  // Formule de Haversine pour estimer la distance à vol d'oiseau.
   const haversine =
     Math.sin(latitudeDifference / 2) ** 2 +
     Math.cos(startLatitude) *

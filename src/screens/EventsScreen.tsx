@@ -18,15 +18,21 @@ import { sortEventsChronologically } from "../utils/validation";
 type EventsScreenProps = NativeStackScreenProps<RootStackParamList, "Events">;
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function EventsScreen({ navigation }: EventsScreenProps) {
   const { events, user, logout, deleteEvent, toggleParticipated } = useApp();
 
+  // --- Localisation utilisateur ---------------------------------------------
+
   const { coordinates, status: locationStatus } = useLocation();
 
+  // --- Tri des événements ----------------------------------------------------
+
   const sortedEvents = [...events].sort(sortEventsChronologically);
+
+  // --- Navigation et actions -------------------------------------------------
 
   function handleAddEvent() {
     navigation.navigate("EventForm");
@@ -50,6 +56,8 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
     await toggleParticipated(id);
   }
 
+  // --- Rendu des cartes ------------------------------------------------------
+
   function renderEvent({ item }: { item: Event }) {
     return (
       <EventCard
@@ -62,6 +70,8 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
       />
     );
   }
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View style={styles.container}>

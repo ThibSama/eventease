@@ -23,7 +23,7 @@ export const EVENT_LOCATION_MIN_LENGTH = 2;
 export const EVENT_LOCATION_MAX_LENGTH = 120;
 
 // ============================================================================
-// AUTHENTICATION VALIDATION
+// VALIDATION DE L'AUTHENTIFICATION
 // ============================================================================
 
 export function isValidEmail(email: string) {
@@ -44,8 +44,10 @@ export function isValidPassword(password: string) {
 }
 
 // ============================================================================
-// EVENT VALIDATION
+// VALIDATION DES ÉVÉNEMENTS
 // ============================================================================
+
+// --- Contenu de l'événement -------------------------------------------------
 
 export function isValidEventTitle(title: string) {
   const normalizedTitle = title.trim();
@@ -78,6 +80,8 @@ export function isValidEventLocation(location: string) {
   );
 }
 
+// --- Date et heure -----------------------------------------------------------
+
 export function isValidEventDate(date: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return false;
@@ -99,8 +103,10 @@ export function isValidEventTime(time: string) {
 }
 
 // ============================================================================
-// DATE HELPERS
+// OUTILS DE DATE
 // ============================================================================
+
+// --- Construction des dates -------------------------------------------------
 
 export function getTodayDate() {
   const today = new Date();
@@ -126,6 +132,8 @@ function getEventDateTime(date: string, time: string) {
   return new Date(year, month - 1, day, hours, minutes);
 }
 
+// --- Statut temporel ---------------------------------------------------------
+
 export function isEventPast(date: string, time: string) {
   const eventDateTime = getEventDateTime(date, time);
 
@@ -135,6 +143,8 @@ export function isEventPast(date: string, time: string) {
 
   return eventDateTime.getTime() < Date.now();
 }
+
+// --- Formatage ---------------------------------------------------------------
 
 export function formatEventDate(date: string) {
   if (!isValidEventDate(date)) {
@@ -163,7 +173,7 @@ export function formatEventDateTime(date: string, time: string) {
 }
 
 // ============================================================================
-// EVENT SORTING
+// TRI DES ÉVÉNEMENTS
 // ============================================================================
 
 export function sortEventsChronologically(

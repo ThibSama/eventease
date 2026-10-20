@@ -14,17 +14,21 @@ import {
 import { useApp } from "../hooks/useApp";
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function AuthScreen() {
   const { login, register } = useApp();
+
+  // --- État du formulaire ----------------------------------------------------
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // --- Soumission ------------------------------------------------------------
 
   async function handleSubmit() {
     const normalizedEmail = email.trim().toLowerCase();
@@ -59,10 +63,14 @@ export function AuthScreen() {
       setSubmitting(false);
     }
   }
+  // --- Changement de mode ----------------------------------------------------
+
   function handleToggleMode() {
     setIsRegistering((current) => !current);
     setError(null);
   }
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View style={styles.container}>

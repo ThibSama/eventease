@@ -51,7 +51,7 @@ type AppProviderProps = {
 export const AppContext = createContext<AppContextType | null>(null);
 
 // ============================================================================
-// PROVIDER
+// FOURNISSEUR
 // ============================================================================
 
 export function AppProvider({ children }: AppProviderProps) {
@@ -60,6 +60,8 @@ export function AppProvider({ children }: AppProviderProps) {
   const [events, setEvents] = useState<Event[]>([]);
 
   const [loading, setLoading] = useState(true);
+
+  // --- Restauration des données ---------------------------------------------
 
   useEffect(() => {
     async function restoreData() {
@@ -77,8 +79,10 @@ export function AppProvider({ children }: AppProviderProps) {
   }, []);
 
   // ==========================================================================
-  // AUTHENTICATION
+  // AUTHENTIFICATION
   // ==========================================================================
+
+  // --- Inscription -----------------------------------------------------------
 
   async function register(email: string, password: string) {
     const newUser: User = {
@@ -91,6 +95,8 @@ export function AppProvider({ children }: AppProviderProps) {
 
     setUser(newUser);
   }
+
+  // --- Connexion -------------------------------------------------------------
 
   async function login(email: string, password: string) {
     const savedUser = await getUser();
@@ -109,14 +115,18 @@ export function AppProvider({ children }: AppProviderProps) {
     return true;
   }
 
+  // --- Déconnexion -----------------------------------------------------------
+
   async function logout() {
     await clearSession();
     setUser(null);
   }
 
   // ==========================================================================
-  // EVENTS
+  // ÉVÉNEMENTS
   // ==========================================================================
+
+  // --- Création --------------------------------------------------------------
 
   async function addEvent(event: Event) {
     const updatedEvents = [...events, event];
@@ -124,6 +134,8 @@ export function AppProvider({ children }: AppProviderProps) {
     setEvents(updatedEvents);
     await saveEvents(updatedEvents);
   }
+
+  // --- Modification ----------------------------------------------------------
 
   async function updateEvent(event: Event) {
     const updatedEvents = events.map((currentEvent) =>
@@ -134,12 +146,16 @@ export function AppProvider({ children }: AppProviderProps) {
     await saveEvents(updatedEvents);
   }
 
+  // --- Suppression -----------------------------------------------------------
+
   async function deleteEvent(id: string) {
     const updatedEvents = events.filter((event) => event.id !== id);
 
     setEvents(updatedEvents);
     await saveEvents(updatedEvents);
   }
+
+  // --- Participation ---------------------------------------------------------
 
   async function toggleParticipated(id: string) {
     const currentEvent = events.find((event) => event.id === id);
@@ -148,6 +164,7 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
+    // Une participation est figée dès que l'événement est passé.
     if (isEventPast(currentEvent.date, currentEvent.time)) {
       return;
     }
@@ -166,7 +183,7 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   // ==========================================================================
-  // RENDER
+  // RENDU
   // ==========================================================================
 
   return (

@@ -13,13 +13,15 @@ import { EventsScreen } from "../screens/EventsScreen";
 import type { RootStackParamList } from "../types";
 
 // ============================================================================
-// NAVIGATOR
+// NAVIGATION
 // ============================================================================
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
   const { user, loading } = useApp();
+
+  // --- Chargement initial ----------------------------------------------------
 
   if (loading) {
     return (
@@ -28,6 +30,8 @@ export function AppNavigator() {
       </View>
     );
   }
+
+  // --- Navigation selon la session ------------------------------------------
 
   return (
     <Stack.Navigator>

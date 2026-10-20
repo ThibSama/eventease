@@ -44,7 +44,7 @@ const MINUTES = Array.from({ length: 60 }, (_, index) =>
 );
 
 // ============================================================================
-// HELPERS
+// UTILITAIRES
 // ============================================================================
 
 function getDefaultTime() {
@@ -61,7 +61,7 @@ function getDefaultTime() {
 }
 
 // ============================================================================
-// COMPONENT
+// COMPOSANT
 // ============================================================================
 
 export function EventForm({
@@ -69,6 +69,8 @@ export function EventForm({
   submitLabel = "Enregistrer",
   onSubmit,
 }: EventFormProps) {
+  // --- État du formulaire ----------------------------------------------------
+
   const defaultTime = getDefaultTime();
 
   const [title, setTitle] = useState(initialValues?.title ?? "");
@@ -99,10 +101,14 @@ export function EventForm({
 
   const time = `${hour}:${minute}`;
 
+  // --- Sélection de date -----------------------------------------------------
+
   function handleDateSelect(day: DateData) {
     setDate(day.dateString);
     setError(null);
   }
+
+  // --- Validation et enregistrement -----------------------------------------
 
   async function handleSubmit() {
     const normalizedTitle = title.trim();
@@ -131,6 +137,7 @@ export function EventForm({
       return;
     }
 
+    // En édition, une date devenue passée peut être conservée telle quelle.
     const keepsExistingDateTime =
       initialValues?.date === date && initialValues?.time === time;
 
@@ -154,6 +161,8 @@ export function EventForm({
       setSubmitting(false);
     }
   }
+
+  // --- Rendu -----------------------------------------------------------------
 
   return (
     <View>
