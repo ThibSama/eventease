@@ -57,6 +57,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       title: values.title,
       description: values.description,
       date: values.date,
+      time: values.time,
       participated: false,
     };
 
@@ -70,6 +71,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         title: existingEvent.title,
         description: existingEvent.description,
         date: existingEvent.date,
+        time: existingEvent.time,
       }
     : undefined;
 

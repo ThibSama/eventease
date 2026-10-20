@@ -5,7 +5,7 @@
 import { Button, StyleSheet, Text, View } from "react-native";
 
 import type { Event } from "../types";
-import { formatEventDate } from "../utils/validation";
+import { formatEventDateTime, isEventPast } from "../utils/validation";
 
 // ============================================================================
 // TYPES
@@ -28,6 +28,8 @@ export function EventCard({
   onDelete,
   onToggleParticipated,
 }: EventCardProps) {
+  const eventPast = isEventPast(event.date, event.time);
+
   function handleEdit() {
     onEdit(event.id);
   }
@@ -44,22 +46,31 @@ export function EventCard({
     <View style={styles.card}>
       <Text style={styles.title}>{event.title}</Text>
 
-      <Text style={styles.date}>{formatEventDate(event.date)}</Text>
+      <Text style={styles.date}>
+        {formatEventDateTime(event.date, event.time)}
+      </Text>
 
       <Text style={styles.description}>{event.description}</Text>
 
+      <Text style={styles.status}>
+        Statut : {eventPast ? "Passé" : "À venir"}
+      </Text>
+
       <Text style={styles.participation}>
-        {event.participated ? "Participé" : "Non participé"}
+        Participation : {event.participated ? "Participé" : "Non participé"}
       </Text>
 
       <View style={styles.actions}>
         <Button
           title={
-            event.participated
-              ? "Annuler la participation"
-              : "Marquer comme participé"
+            eventPast
+              ? "Événement passé"
+              : event.participated
+                ? "Annuler la participation"
+                : "Rejoindre l'événement"
           }
           onPress={handleToggleParticipated}
+          disabled={eventPast}
         />
 
         <Button title="Modifier" onPress={handleEdit} />
@@ -92,6 +103,10 @@ const styles = StyleSheet.create({
   },
   description: {
     marginBottom: 12,
+  },
+  status: {
+    fontWeight: "600",
+    marginBottom: 4,
   },
   participation: {
     fontWeight: "500",

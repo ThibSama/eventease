@@ -16,6 +16,7 @@ export type Event = {
   title: string;
   description: string;
   date: string;
+  time: string;
   participated: boolean;
   location?: {
     name: string;
@@ -28,6 +29,7 @@ export type EventFormValues = {
   title: string;
   description: string;
   date: string;
+  time: string;
 };
 
 // ============================================================================
@@ -37,6 +39,7 @@ export type EventFormValues = {
 export type RootStackParamList = {
   Auth: undefined;
   Events: undefined;
+  Calendar: undefined;
   EventForm:
     | {
         eventId?: string;

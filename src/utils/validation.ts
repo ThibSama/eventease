@@ -1,4 +1,10 @@
 // ============================================================================
+// IMPORTS
+// ============================================================================
+
+import type { Event } from "../types";
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 
@@ -62,14 +68,18 @@ export function isValidEventDate(date: string) {
   }
 
   const [year, month, day] = date.split("-").map(Number);
+
   const parsedDate = new Date(year, month - 1, day);
 
   return (
     parsedDate.getFullYear() === year &&
     parsedDate.getMonth() === month - 1 &&
-    parsedDate.getDate() === day &&
-    date >= getTodayDate()
+    parsedDate.getDate() === day
   );
+}
+
+export function isValidEventTime(time: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 }
 
 // ============================================================================
@@ -86,8 +96,29 @@ export function getTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
+function getEventDateTime(date: string, time: string) {
+  if (!isValidEventDate(date) || !isValidEventTime(time)) {
+    return null;
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return new Date(year, month - 1, day, hours, minutes);
+}
+
+export function isEventPast(date: string, time: string) {
+  const eventDateTime = getEventDateTime(date, time);
+
+  if (!eventDateTime) {
+    return true;
+  }
+
+  return eventDateTime.getTime() < Date.now();
+}
+
 export function formatEventDate(date: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (!isValidEventDate(date)) {
     return date;
   }
 
@@ -95,13 +126,34 @@ export function formatEventDate(date: string) {
 
   const eventDate = new Date(year, month - 1, day);
 
-  if (Number.isNaN(eventDate.getTime())) {
-    return date;
-  }
-
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(eventDate);
+}
+
+export function formatEventDateTime(date: string, time: string) {
+  const formattedDate = formatEventDate(date);
+
+  if (!isValidEventTime(time)) {
+    return formattedDate;
+  }
+
+  return `${formattedDate} à ${time}`;
+}
+
+// ============================================================================
+// EVENT SORTING
+// ============================================================================
+
+export function sortEventsChronologically(
+  firstEvent: Event,
+  secondEvent: Event,
+) {
+  const firstDateTime = `${firstEvent.date}T${firstEvent.time}`;
+
+  const secondDateTime = `${secondEvent.date}T${secondEvent.time}`;
+
+  return firstDateTime.localeCompare(secondDateTime);
 }

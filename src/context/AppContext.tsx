@@ -14,6 +14,7 @@ import {
   saveUser,
 } from "../services/storage";
 import type { Event, User } from "../types";
+import { isEventPast } from "../utils/validation";
 
 // ============================================================================
 // TYPES
@@ -25,12 +26,17 @@ type AppContextType = {
   loading: boolean;
 
   register: (email: string, password: string) => Promise<void>;
+
   login: (email: string, password: string) => Promise<boolean>;
+
   logout: () => Promise<void>;
 
   addEvent: (event: Event) => Promise<void>;
+
   updateEvent: (event: Event) => Promise<void>;
+
   deleteEvent: (id: string) => Promise<void>;
+
   toggleParticipated: (id: string) => Promise<void>;
 };
 
@@ -50,7 +56,9 @@ export const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: AppProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+
   const [events, setEvents] = useState<Event[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -134,6 +142,16 @@ export function AppProvider({ children }: AppProviderProps) {
   }
 
   async function toggleParticipated(id: string) {
+    const currentEvent = events.find((event) => event.id === id);
+
+    if (!currentEvent) {
+      return;
+    }
+
+    if (isEventPast(currentEvent.date, currentEvent.time)) {
+      return;
+    }
+
     const updatedEvents = events.map((event) =>
       event.id === id
         ? {

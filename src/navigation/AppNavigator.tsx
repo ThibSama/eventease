@@ -7,6 +7,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { useApp } from "../hooks/useApp";
 import { AuthScreen } from "../screens/AuthScreen";
+import { CalendarScreen } from "../screens/CalendarScreen";
 import { EventFormScreen } from "../screens/EventFormScreen";
 import { EventsScreen } from "../screens/EventsScreen";
 import type { RootStackParamList } from "../types";
@@ -36,6 +37,12 @@ export function AppNavigator() {
             name="Events"
             component={EventsScreen}
             options={{ title: "EventEase" }}
+          />
+
+          <Stack.Screen
+            name="Calendar"
+            component={CalendarScreen}
+            options={{ title: "Calendrier" }}
           />
 
           <Stack.Screen

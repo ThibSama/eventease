@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
+import { Picker } from "@react-native-picker/picker";
 
 import type { EventFormValues } from "../types";
 import {
@@ -12,10 +13,12 @@ import {
   EVENT_TITLE_MAX_LENGTH,
   formatEventDate,
   getTodayDate,
+  isEventPast,
   isValidEventDate,
   isValidEventDescription,
   isValidEventTitle,
 } from "../utils/validation";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -27,6 +30,34 @@ type EventFormProps = {
 };
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const HOURS = Array.from({ length: 24 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
+
+const MINUTES = Array.from({ length: 60 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function getDefaultTime() {
+  const now = new Date();
+
+  const nextHour = new Date(now);
+  nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+
+  return {
+    hour: String(nextHour.getHours()).padStart(2, "0"),
+    minute: "00",
+  };
+}
+
+// ============================================================================
 // COMPONENT
 // ============================================================================
 
@@ -35,15 +66,29 @@ export function EventForm({
   submitLabel = "Enregistrer",
   onSubmit,
 }: EventFormProps) {
+  const defaultTime = getDefaultTime();
+
   const [title, setTitle] = useState(initialValues?.title ?? "");
+
   const [description, setDescription] = useState(
     initialValues?.description ?? "",
   );
+
   const [date, setDate] = useState(initialValues?.date ?? "");
+
+  const [hour, setHour] = useState(
+    initialValues?.time?.split(":")[0] ?? defaultTime.hour,
+  );
+
+  const [minute, setMinute] = useState(
+    initialValues?.time?.split(":")[1] ?? defaultTime.minute,
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const today = getTodayDate();
+  const time = `${hour}:${minute}`;
 
   function handleDateSelect(day: DateData) {
     setDate(day.dateString);
@@ -64,13 +109,16 @@ export function EventForm({
       return;
     }
 
-    if (!date) {
-      setError("Veuillez sélectionner une date.");
+    if (!date || !isValidEventDate(date)) {
+      setError("Veuillez sélectionner une date valide.");
       return;
     }
 
-    if (!isValidEventDate(date)) {
-      setError("La date de l'événement ne peut pas être passée.");
+    const keepsExistingDateTime =
+      initialValues?.date === date && initialValues?.time === time;
+
+    if (isEventPast(date, time) && !keepsExistingDateTime) {
+      setError("Un événement ne peut pas être créé ou déplacé dans le passé.");
       return;
     }
 
@@ -82,6 +130,7 @@ export function EventForm({
         title: normalizedTitle,
         description: normalizedDescription,
         date,
+        time,
       });
     } finally {
       setSubmitting(false);
@@ -91,6 +140,7 @@ export function EventForm({
   return (
     <View>
       <Text style={styles.label}>Titre</Text>
+
       <TextInput
         style={styles.input}
         value={title}
@@ -98,10 +148,13 @@ export function EventForm({
         placeholder="Titre de l'événement"
         maxLength={EVENT_TITLE_MAX_LENGTH}
       />
+
       <Text style={styles.helper}>
         {title.length}/{EVENT_TITLE_MAX_LENGTH}
       </Text>
+
       <Text style={styles.label}>Description</Text>
+
       <TextInput
         style={[styles.input, styles.description]}
         value={description}
@@ -110,11 +163,15 @@ export function EventForm({
         maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
         multiline
       />
+
       <Text style={styles.helper}>
         {description.length}/{EVENT_DESCRIPTION_MAX_LENGTH}
       </Text>
+
       <Text style={styles.label}>Date</Text>
+
       <Calendar
+        current={date || today}
         minDate={today}
         firstDay={1}
         onDayPress={handleDateSelect}
@@ -134,7 +191,43 @@ export function EventForm({
           Date sélectionnée : {formatEventDate(date)}
         </Text>
       ) : null}
+
+      <Text style={styles.label}>Heure</Text>
+
+      <View style={styles.timeSelector}>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={hour}
+            onValueChange={(value) => {
+              setHour(value);
+              setError(null);
+            }}>
+            {HOURS.map((value) => (
+              <Picker.Item key={value} label={value} value={value} />
+            ))}
+          </Picker>
+        </View>
+
+        <Text style={styles.timeSeparator}>:</Text>
+
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={minute}
+            onValueChange={(value) => {
+              setMinute(value);
+              setError(null);
+            }}>
+            {MINUTES.map((value) => (
+              <Picker.Item key={value} label={value} value={value} />
+            ))}
+          </Picker>
+        </View>
+      </View>
+
+      <Text style={styles.selectedTime}>Heure sélectionnée : {time}</Text>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
       <Button
         title={submitLabel}
         onPress={handleSubmit}
@@ -173,6 +266,28 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 16,
     textAlign: "center",
+    fontWeight: "500",
+  },
+  timeSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  pickerContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  timeSeparator: {
+    fontSize: 24,
+    fontWeight: "600",
+  },
+  selectedTime: {
+    textAlign: "center",
+    marginBottom: 16,
     fontWeight: "500",
   },
   error: {

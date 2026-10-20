@@ -8,6 +8,7 @@ import { Button, FlatList, StyleSheet, Text, View } from "react-native";
 import { EventCard } from "../components/EventCard";
 import { useApp } from "../hooks/useApp";
 import type { Event, RootStackParamList } from "../types";
+import { sortEventsChronologically } from "../utils/validation";
 
 // ============================================================================
 // TYPES
@@ -22,8 +23,14 @@ type EventsScreenProps = NativeStackScreenProps<RootStackParamList, "Events">;
 export function EventsScreen({ navigation }: EventsScreenProps) {
   const { events, user, logout, deleteEvent, toggleParticipated } = useApp();
 
+  const sortedEvents = [...events].sort(sortEventsChronologically);
+
   function handleAddEvent() {
     navigation.navigate("EventForm");
+  }
+
+  function handleOpenCalendar() {
+    navigation.navigate("Calendar");
   }
 
   function handleEditEvent(id: string) {
@@ -60,15 +67,18 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
       <View style={styles.actions}>
         <Button title="Ajouter un événement" onPress={handleAddEvent} />
 
+        <Button title="Calendrier" onPress={handleOpenCalendar} />
+
         <Button title="Déconnexion" onPress={logout} />
       </View>
 
       <Text style={styles.count}>
-        {events.length} événement{events.length > 1 ? "s" : ""}
+        {events.length} événement
+        {events.length > 1 ? "s" : ""}
       </Text>
 
       <FlatList
-        data={events}
+        data={sortedEvents}
         keyExtractor={(event) => event.id}
         renderItem={renderEvent}
         contentContainerStyle={styles.list}

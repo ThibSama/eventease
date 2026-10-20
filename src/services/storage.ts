@@ -5,6 +5,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { Event, User } from "../types";
+import { isValidEventTime } from "../utils/validation";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type StoredEvent = Omit<Event, "time"> & {
+  time?: string;
+};
 
 // ============================================================================
 // CONSTANTS
@@ -57,5 +66,22 @@ export async function saveEvents(events: Event[]) {
 export async function getEvents(): Promise<Event[]> {
   const value = await AsyncStorage.getItem(EVENTS_KEY);
 
-  return value ? JSON.parse(value) : [];
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const storedEvents = JSON.parse(value) as StoredEvent[];
+
+    if (!Array.isArray(storedEvents)) {
+      return [];
+    }
+
+    return storedEvents.map((event) => ({
+      ...event,
+      time: event.time && isValidEventTime(event.time) ? event.time : "00:00",
+    }));
+  } catch {
+    return [];
+  }
 }
