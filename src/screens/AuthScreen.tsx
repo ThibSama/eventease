@@ -4,7 +4,13 @@
 
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
-
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  isValidEmail,
+  isValidPassword,
+} from "../utils/validation";
 import { useApp } from "../hooks/useApp";
 
 // ============================================================================
@@ -21,10 +27,17 @@ export function AuthScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
-    const normalizedEmail = email.trim();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!normalizedEmail || !password) {
-      setError("Veuillez remplir tous les champs.");
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Veuillez saisir une adresse email valide.");
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      setError(
+        `Le mot de passe doit contenir entre ${PASSWORD_MIN_LENGTH} et ${PASSWORD_MAX_LENGTH} caractères.`,
+      );
       return;
     }
 
@@ -46,7 +59,6 @@ export function AuthScreen() {
       setSubmitting(false);
     }
   }
-
   function handleToggleMode() {
     setIsRegistering((current) => !current);
     setError(null);
@@ -66,7 +78,9 @@ export function AuthScreen() {
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        autoCorrect={false}
         keyboardType="email-address"
+        maxLength={EMAIL_MAX_LENGTH}
       />
 
       <TextInput
@@ -75,8 +89,8 @@ export function AuthScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        maxLength={PASSWORD_MAX_LENGTH}
       />
-
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.primaryButton}>

@@ -5,6 +5,7 @@
 import { Button, StyleSheet, Text, View } from "react-native";
 
 import type { Event } from "../types";
+import { formatEventDate } from "../utils/validation";
 
 // ============================================================================
 // TYPES
@@ -43,7 +44,7 @@ export function EventCard({
     <View style={styles.card}>
       <Text style={styles.title}>{event.title}</Text>
 
-      <Text style={styles.date}>{event.date}</Text>
+      <Text style={styles.date}>{formatEventDate(event.date)}</Text>
 
       <Text style={styles.description}>{event.description}</Text>
 
