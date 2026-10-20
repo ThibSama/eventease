@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================================
 
-import { StyleSheet, Text, View } from "react-native";
+import { Button, StyleSheet, Text, View } from "react-native";
 
 import type { Event } from "../types";
 
@@ -12,13 +12,18 @@ import type { Event } from "../types";
 
 type EventCardProps = {
   event: Event;
+  onEdit: (id: string) => void;
 };
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onEdit }: EventCardProps) {
+  function handleEdit() {
+    onEdit(event.id);
+  }
+
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{event.title}</Text>
@@ -30,6 +35,10 @@ export function EventCard({ event }: EventCardProps) {
       <Text style={styles.participation}>
         {event.participated ? "Participé" : "Non participé"}
       </Text>
+
+      <View style={styles.actions}>
+        <Button title="Modifier" onPress={handleEdit} />
+      </View>
     </View>
   );
 }
@@ -59,5 +68,9 @@ const styles = StyleSheet.create({
   },
   participation: {
     fontWeight: "500",
+    marginBottom: 12,
+  },
+  actions: {
+    alignItems: "flex-start",
   },
 });

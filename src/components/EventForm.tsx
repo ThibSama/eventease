@@ -5,17 +5,15 @@
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
+import type { EventFormValues } from "../types";
+
 // ============================================================================
 // TYPES
 // ============================================================================
 
-type EventFormValues = {
-  title: string;
-  description: string;
-  date: string;
-};
-
 type EventFormProps = {
+  initialValues?: EventFormValues;
+  submitLabel?: string;
   onSubmit: (values: EventFormValues) => Promise<void>;
 };
 
@@ -23,10 +21,16 @@ type EventFormProps = {
 // COMPONENT
 // ============================================================================
 
-export function EventForm({ onSubmit }: EventFormProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+export function EventForm({
+  initialValues,
+  submitLabel = "Enregistrer",
+  onSubmit,
+}: EventFormProps) {
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [description, setDescription] = useState(
+    initialValues?.description ?? "",
+  );
+  const [date, setDate] = useState(initialValues?.date ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,6 +61,7 @@ export function EventForm({ onSubmit }: EventFormProps) {
   return (
     <View>
       <Text style={styles.label}>Titre</Text>
+
       <TextInput
         style={styles.input}
         value={title}
@@ -65,6 +70,7 @@ export function EventForm({ onSubmit }: EventFormProps) {
       />
 
       <Text style={styles.label}>Description</Text>
+
       <TextInput
         style={[styles.input, styles.description]}
         value={description}
@@ -74,6 +80,7 @@ export function EventForm({ onSubmit }: EventFormProps) {
       />
 
       <Text style={styles.label}>Date</Text>
+
       <TextInput
         style={styles.input}
         value={date}
@@ -84,7 +91,7 @@ export function EventForm({ onSubmit }: EventFormProps) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Button
-        title="Enregistrer"
+        title={submitLabel}
         onPress={handleSubmit}
         disabled={submitting}
       />

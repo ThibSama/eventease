@@ -41,7 +41,11 @@ export function AppNavigator() {
           <Stack.Screen
             name="EventForm"
             component={EventFormScreen}
-            options={{ title: "Nouvel événement" }}
+            options={({ route }) => ({
+              title: route.params?.eventId
+                ? "Modifier l'événement"
+                : "Nouvel événement",
+            })}
           />
         </>
       ) : (

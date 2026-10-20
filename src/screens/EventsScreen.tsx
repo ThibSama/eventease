@@ -26,8 +26,14 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
     navigation.navigate("EventForm");
   }
 
+  function handleEditEvent(id: string) {
+    navigation.navigate("EventForm", {
+      eventId: id,
+    });
+  }
+
   function renderEvent({ item }: { item: Event }) {
-    return <EventCard event={item} />;
+    return <EventCard event={item} onEdit={handleEditEvent} />;
   }
 
   return (

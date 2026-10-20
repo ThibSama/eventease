@@ -24,6 +24,12 @@ export type Event = {
   };
 };
 
+export type EventFormValues = {
+  title: string;
+  description: string;
+  date: string;
+};
+
 // ============================================================================
 // NAVIGATION
 // ============================================================================
@@ -31,5 +37,9 @@ export type Event = {
 export type RootStackParamList = {
   Auth: undefined;
   Events: undefined;
-  EventForm: undefined;
+  EventForm:
+    | {
+        eventId?: string;
+      }
+    | undefined;
 };
