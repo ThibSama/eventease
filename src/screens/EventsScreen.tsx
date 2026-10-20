@@ -26,6 +26,10 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
     navigation.navigate("EventForm");
   }
 
+  function handleOpenCalendar() {
+    navigation.navigate("Calendar");
+  }
+
   function handleEditEvent(id: string) {
     navigation.navigate("EventForm", {
       eventId: id,
@@ -59,6 +63,8 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
 
       <View style={styles.actions}>
         <Button title="Ajouter un événement" onPress={handleAddEvent} />
+
+        <Button title="Calendrier" onPress={handleOpenCalendar} />
 
         <Button title="Déconnexion" onPress={logout} />
       </View>

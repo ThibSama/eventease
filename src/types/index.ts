@@ -37,6 +37,7 @@ export type EventFormValues = {
 export type RootStackParamList = {
   Auth: undefined;
   Events: undefined;
+  Calendar: undefined;
   EventForm:
     | {
         eventId?: string;
