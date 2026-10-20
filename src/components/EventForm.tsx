@@ -2,20 +2,22 @@
 // IMPORTS
 // ============================================================================
 
+import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
-import { Picker } from "@react-native-picker/picker";
 
 import type { EventFormValues } from "../types";
 import {
   EVENT_DESCRIPTION_MAX_LENGTH,
+  EVENT_LOCATION_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
   formatEventDate,
   getTodayDate,
   isEventPast,
   isValidEventDate,
   isValidEventDescription,
+  isValidEventLocation,
   isValidEventTitle,
 } from "../utils/validation";
 
@@ -49,6 +51,7 @@ function getDefaultTime() {
   const now = new Date();
 
   const nextHour = new Date(now);
+
   nextHour.setHours(now.getHours() + 1, 0, 0, 0);
 
   return {
@@ -84,10 +87,16 @@ export function EventForm({
     initialValues?.time?.split(":")[1] ?? defaultTime.minute,
   );
 
+  const [locationName, setLocationName] = useState(
+    initialValues?.locationName ?? "",
+  );
+
   const [error, setError] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
 
   const today = getTodayDate();
+
   const time = `${hour}:${minute}`;
 
   function handleDateSelect(day: DateData) {
@@ -97,7 +106,10 @@ export function EventForm({
 
   async function handleSubmit() {
     const normalizedTitle = title.trim();
+
     const normalizedDescription = description.trim();
+
+    const normalizedLocation = locationName.trim();
 
     if (!isValidEventTitle(normalizedTitle)) {
       setError("Le titre doit contenir entre 3 et 80 caractères.");
@@ -111,6 +123,11 @@ export function EventForm({
 
     if (!date || !isValidEventDate(date)) {
       setError("Veuillez sélectionner une date valide.");
+      return;
+    }
+
+    if (!isValidEventLocation(normalizedLocation)) {
+      setError("Le lieu doit contenir entre 2 et 120 caractères.");
       return;
     }
 
@@ -131,6 +148,7 @@ export function EventForm({
         description: normalizedDescription,
         date,
         time,
+        locationName: normalizedLocation,
       });
     } finally {
       setSubmitting(false);
@@ -226,6 +244,22 @@ export function EventForm({
 
       <Text style={styles.selectedTime}>Heure sélectionnée : {time}</Text>
 
+      <Text style={styles.label}>Ville ou code postal</Text>
+
+      <TextInput
+        style={styles.input}
+        value={locationName}
+        onChangeText={(value) => {
+          setLocationName(value);
+          setError(null);
+        }}
+        placeholder="Ex. Cambrai ou 59400"
+        maxLength={EVENT_LOCATION_MAX_LENGTH}
+        autoCapitalize="words"
+      />
+
+      <Text style={styles.locationHelper}>Facultatif</Text>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Button
@@ -289,6 +323,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     fontWeight: "500",
+  },
+  locationHelper: {
+    fontSize: 12,
+    marginBottom: 16,
+    textAlign: "right",
   },
   error: {
     marginBottom: 16,

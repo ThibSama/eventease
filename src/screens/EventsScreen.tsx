@@ -7,6 +7,7 @@ import { Button, FlatList, StyleSheet, Text, View } from "react-native";
 
 import { EventCard } from "../components/EventCard";
 import { useApp } from "../hooks/useApp";
+import { useLocation } from "../hooks/useLocation";
 import type { Event, RootStackParamList } from "../types";
 import { sortEventsChronologically } from "../utils/validation";
 
@@ -22,6 +23,8 @@ type EventsScreenProps = NativeStackScreenProps<RootStackParamList, "Events">;
 
 export function EventsScreen({ navigation }: EventsScreenProps) {
   const { events, user, logout, deleteEvent, toggleParticipated } = useApp();
+
+  const { coordinates, status: locationStatus } = useLocation();
 
   const sortedEvents = [...events].sort(sortEventsChronologically);
 
@@ -51,6 +54,8 @@ export function EventsScreen({ navigation }: EventsScreenProps) {
     return (
       <EventCard
         event={item}
+        userCoordinates={coordinates}
+        locationStatus={locationStatus}
         onEdit={handleEditEvent}
         onDelete={handleDeleteEvent}
         onToggleParticipated={handleToggleParticipated}

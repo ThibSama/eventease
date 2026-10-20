@@ -7,7 +7,13 @@ import { Button, StyleSheet, Text, View } from "react-native";
 
 import { EventForm } from "../components/EventForm";
 import { useApp } from "../hooks/useApp";
-import type { Event, EventFormValues, RootStackParamList } from "../types";
+import { geocodeLocation } from "../services/geocoding";
+import type {
+  Event,
+  EventFormValues,
+  EventLocation,
+  RootStackParamList,
+} from "../types";
 
 // ============================================================================
 // TYPES
@@ -41,11 +47,44 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
     );
   }
 
+  async function resolveLocation(
+    locationName: string,
+  ): Promise<EventLocation | undefined> {
+    const normalizedLocation = locationName.trim();
+
+    if (!normalizedLocation) {
+      return undefined;
+    }
+
+    if (
+      existingEvent?.location &&
+      existingEvent.location.name === normalizedLocation
+    ) {
+      return existingEvent.location;
+    }
+
+    const geocodedLocation = await geocodeLocation(normalizedLocation);
+
+    if (geocodedLocation) {
+      return geocodedLocation;
+    }
+
+    return {
+      name: normalizedLocation,
+    };
+  }
+
   async function handleSubmit(values: EventFormValues) {
+    const location = await resolveLocation(values.locationName);
+
     if (existingEvent) {
       await updateEvent({
         ...existingEvent,
-        ...values,
+        title: values.title,
+        description: values.description,
+        date: values.date,
+        time: values.time,
+        location,
       });
 
       navigation.goBack();
@@ -59,6 +98,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       date: values.date,
       time: values.time,
       participated: false,
+      location,
     };
 
     await addEvent(event);
@@ -72,6 +112,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         description: existingEvent.description,
         date: existingEvent.date,
         time: existingEvent.time,
+        locationName: existingEvent.location?.name ?? "",
       }
     : undefined;
 

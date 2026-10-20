@@ -4,7 +4,10 @@
 
 import { Button, StyleSheet, Text, View } from "react-native";
 
+import { useEventWeather } from "../hooks/useEventWeather";
+import type { UserCoordinates, UserLocationStatus } from "../hooks/useLocation";
 import type { Event } from "../types";
+import { calculateDistanceKm, formatDistance } from "../utils/distance";
 import { formatEventDateTime, isEventPast } from "../utils/validation";
 
 // ============================================================================
@@ -13,6 +16,8 @@ import { formatEventDateTime, isEventPast } from "../utils/validation";
 
 type EventCardProps = {
   event: Event;
+  userCoordinates: UserCoordinates | null;
+  locationStatus: UserLocationStatus;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleParticipated: (id: string) => void;
@@ -24,11 +29,34 @@ type EventCardProps = {
 
 export function EventCard({
   event,
+  userCoordinates,
+  locationStatus,
   onEdit,
   onDelete,
   onToggleParticipated,
 }: EventCardProps) {
   const eventPast = isEventPast(event.date, event.time);
+
+  const eventCoordinates =
+    event.location?.latitude !== undefined &&
+    event.location?.longitude !== undefined
+      ? {
+          latitude: event.location.latitude,
+          longitude: event.location.longitude,
+        }
+      : null;
+
+  const distance =
+    userCoordinates && eventCoordinates
+      ? calculateDistanceKm(userCoordinates, eventCoordinates)
+      : null;
+
+  const { weather, status: weatherStatus } = useEventWeather({
+    date: event.date,
+    latitude: eventCoordinates?.latitude,
+    longitude: eventCoordinates?.longitude,
+    enabled: !eventPast,
+  });
 
   function handleEdit() {
     onEdit(event.id);
@@ -49,6 +77,67 @@ export function EventCard({
       <Text style={styles.date}>
         {formatEventDateTime(event.date, event.time)}
       </Text>
+
+      {event.location ? (
+        <>
+          <Text style={styles.location}>Lieu : {event.location.name}</Text>
+
+          {distance !== null ? (
+            <Text style={styles.distance}>
+              Distance : environ {formatDistance(distance)}
+            </Text>
+          ) : eventCoordinates ? (
+            <Text style={styles.distance}>
+              {locationStatus === "loading"
+                ? "Distance : localisation en cours..."
+                : "Distance : localisation utilisateur indisponible"}
+            </Text>
+          ) : (
+            <Text style={styles.distance}>
+              Distance : coordonnées du lieu indisponibles
+            </Text>
+          )}
+
+          {!eventPast && eventCoordinates ? (
+            <View style={styles.weather}>
+              {weatherStatus === "loading" ? (
+                <Text>Météo : chargement...</Text>
+              ) : null}
+
+              {weatherStatus === "available" && weather ? (
+                <>
+                  <Text>Météo : {weather.condition}</Text>
+
+                  <Text>
+                    Températures : {Math.round(weather.minTemperature)}
+                    °C à {Math.round(weather.maxTemperature)}
+                    °C
+                  </Text>
+
+                  {weather.precipitationProbability !== null ? (
+                    <Text>
+                      Risque de pluie :{" "}
+                      {Math.round(weather.precipitationProbability)}%
+                    </Text>
+                  ) : null}
+                </>
+              ) : null}
+
+              {weatherStatus === "out-of-range" ? (
+                <Text>
+                  {
+                    "Météo : prévisions disponibles à l'approche de l'événement."
+                  }
+                </Text>
+              ) : null}
+
+              {weatherStatus === "unavailable" ? (
+                <Text>Météo : indisponible.</Text>
+              ) : null}
+            </View>
+          ) : null}
+        </>
+      ) : null}
 
       <Text style={styles.description}>{event.description}</Text>
 
@@ -99,6 +188,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   date: {
+    marginBottom: 6,
+  },
+  location: {
+    marginBottom: 4,
+    fontWeight: "500",
+  },
+  distance: {
+    marginBottom: 6,
+  },
+  weather: {
     marginBottom: 8,
   },
   description: {
