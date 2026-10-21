@@ -9,6 +9,8 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 // ============================================================================
 
 export type User = {
+  id: string;
+  username: string;
   email: string;
   password: string;
 };
@@ -23,15 +25,24 @@ export type EventLocation = {
   longitude?: number;
 };
 
+export type EventOrganizer = {
+  userId: string;
+  username: string;
+};
+
 export type Event = {
   id: string;
   title: string;
   description: string;
   date: string;
   time: string;
-  participated: boolean;
+  participantIds: string[];
+  maxParticipants?: number;
   location?: EventLocation;
+  organizer: EventOrganizer;
 };
+
+export type NewEvent = Omit<Event, "organizer" | "participantIds">;
 
 export type EventFormValues = {
   title: string;
@@ -39,6 +50,7 @@ export type EventFormValues = {
   date: string;
   time: string;
   locationName: string;
+  maxParticipants?: number;
 };
 
 // ============================================================================

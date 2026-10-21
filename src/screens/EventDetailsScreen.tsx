@@ -41,11 +41,19 @@ export function EventDetailsScreen({
   navigation,
   route,
 }: EventDetailsScreenProps) {
-  const { events, deleteEvent, toggleParticipated } = useApp();
+  const { user, events, deleteEvent, toggleParticipated } = useApp();
 
   // --- Résolution de l'événement --------------------------------------------
 
   const event = events.find((item) => item.id === route.params.eventId);
+
+  const isOrganizer = Boolean(
+    event && user && event.organizer.userId === user.id,
+  );
+
+  const isParticipating = Boolean(
+    event && user && event.participantIds.includes(user.id),
+  );
 
   // --- Localisation utilisateur ---------------------------------------------
 
@@ -76,9 +84,11 @@ export function EventDetailsScreen({
   }
 
   function handleEdit() {
-    if (event) {
-      navigation.navigate("EventForm", { eventId: event.id });
+    if (!event || !isOrganizer) {
+      return;
     }
+
+    navigation.navigate("EventForm", { eventId: event.id });
   }
 
   async function handleToggleParticipated() {
@@ -88,7 +98,7 @@ export function EventDetailsScreen({
   }
 
   async function handleDelete() {
-    if (!event) {
+    if (!event || !isOrganizer) {
       return;
     }
 
@@ -119,6 +129,22 @@ export function EventDetailsScreen({
       </SafeAreaView>
     );
   }
+
+  // --- Participants et capacité ---------------------------------------------
+
+  // L'organisateur est lié à l'événement séparément et n'occupe aucune place.
+  const participantCount = event.participantIds.length;
+
+  const eventIsFull =
+    event.maxParticipants !== undefined &&
+    participantCount >= event.maxParticipants;
+
+  const participantWord = participantCount > 1 ? "participants" : "participant";
+
+  const capacityLabel =
+    event.maxParticipants !== undefined
+      ? `${participantCount} / ${event.maxParticipants} place${event.maxParticipants > 1 ? "s" : ""}`
+      : `${participantCount} ${participantWord} · places illimitées`;
 
   // --- Distance --------------------------------------------------------------
 
@@ -160,10 +186,14 @@ export function EventDetailsScreen({
 
   let participationLabel = "PARTICIPATION OUVERTE";
 
-  if (event.participated) {
+  if (isOrganizer) {
+    participationLabel = eventPast ? "VOUS AVEZ ORGANISÉ" : "VOUS ORGANISEZ";
+  } else if (isParticipating) {
     participationLabel = eventPast ? "VOUS AVEZ PARTICIPÉ" : "VOUS PARTICIPEZ";
   } else if (eventPast) {
     participationLabel = "NON PARTICIPÉ";
+  } else if (eventIsFull) {
+    participationLabel = "ÉVÉNEMENT COMPLET";
   }
 
   // --- Rendu -----------------------------------------------------------------
@@ -189,7 +219,9 @@ export function EventDetailsScreen({
           <Text
             style={[
               styles.participation,
-              eventPast && !event.participated && styles.participationMuted,
+              ((eventPast && !isParticipating && !isOrganizer) ||
+                (eventIsFull && !isParticipating && !isOrganizer)) &&
+                styles.participationMuted,
             ]}>
             {participationLabel}
           </Text>
@@ -211,6 +243,18 @@ export function EventDetailsScreen({
         ) : (
           <Text style={styles.info}>Lieu non renseigné</Text>
         )}
+
+        <View style={styles.organizer}>
+          <Text style={styles.metaLabel}>ORGANISÉ PAR</Text>
+
+          <Text style={styles.organizerName}>@{event.organizer.username}</Text>
+        </View>
+
+        <View style={styles.capacity}>
+          <Text style={styles.metaLabel}>PARTICIPANTS</Text>
+
+          <Text style={styles.capacityValue}>{capacityLabel}</Text>
+        </View>
 
         {distanceLabel || weatherStatus !== "idle" ? (
           <View style={styles.distanceRow}>
@@ -249,7 +293,7 @@ export function EventDetailsScreen({
         {/* --- Actions ------------------------------------------------------ */}
 
         <View style={styles.actions}>
-          {eventPast ? (
+          {isOrganizer ? null : eventPast ? (
             <>
               <AppButton label="Événement passé" variant="inactive" />
 
@@ -257,61 +301,65 @@ export function EventDetailsScreen({
                 Cet événement ne peut plus être rejoint.
               </Text>
             </>
+          ) : eventIsFull && !isParticipating ? (
+            <AppButton label="Événement complet" variant="inactive" />
           ) : (
             <AppButton
               label={
-                event.participated
+                isParticipating
                   ? "Annuler ma participation"
                   : "Rejoindre l’événement"
               }
-              variant={event.participated ? "secondary" : "primary"}
+              variant={isParticipating ? "secondary" : "primary"}
               onPress={handleToggleParticipated}
             />
           )}
 
-          {confirmingDelete ? (
-            <>
-              <Text style={styles.deleteHint}>
-                Supprimer définitivement cet événement ?
-              </Text>
+          {isOrganizer ? (
+            confirmingDelete ? (
+              <>
+                <Text style={styles.deleteHint}>
+                  Supprimer définitivement cet événement ?
+                </Text>
 
+                <View style={styles.secondaryActions}>
+                  <View style={styles.secondaryAction}>
+                    <AppButton
+                      label="Annuler"
+                      variant="secondary"
+                      onPress={handleCancelDelete}
+                    />
+                  </View>
+
+                  <View style={styles.secondaryAction}>
+                    <AppButton
+                      label="Supprimer"
+                      variant="danger"
+                      onPress={handleDelete}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
               <View style={styles.secondaryActions}>
                 <View style={styles.secondaryAction}>
                   <AppButton
-                    label="Annuler"
+                    label="Modifier"
                     variant="secondary"
-                    onPress={handleCancelDelete}
+                    onPress={handleEdit}
                   />
                 </View>
 
                 <View style={styles.secondaryAction}>
                   <AppButton
                     label="Supprimer"
-                    variant="danger"
+                    variant="secondary"
                     onPress={handleDelete}
                   />
                 </View>
               </View>
-            </>
-          ) : (
-            <View style={styles.secondaryActions}>
-              <View style={styles.secondaryAction}>
-                <AppButton
-                  label="Modifier"
-                  variant="secondary"
-                  onPress={handleEdit}
-                />
-              </View>
-
-              <View style={styles.secondaryAction}>
-                <AppButton
-                  label="Supprimer"
-                  variant="secondary"
-                  onPress={handleDelete}
-                />
-              </View>
-            </View>
-          )}
+            )
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -383,6 +431,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: colors.textMuted,
     fontSize: 14,
+  },
+  organizer: {
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  capacity: {
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  metaLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  organizerName: {
+    marginTop: 4,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  capacityValue: {
+    marginTop: 4,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
   },
   distanceRow: {
     flexDirection: "row",

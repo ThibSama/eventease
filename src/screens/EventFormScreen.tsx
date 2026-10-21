@@ -18,9 +18,9 @@ import { useApp } from "../hooks/useApp";
 import { geocodeLocation } from "../services/geocoding";
 import { colors, spacing } from "../theme";
 import type {
-  Event,
   EventFormValues,
   EventLocation,
+  NewEvent,
   RootStackParamList,
 } from "../types";
 
@@ -38,7 +38,7 @@ type EventFormScreenProps = NativeStackScreenProps<
 // ============================================================================
 
 export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
-  const { events, addEvent, updateEvent } = useApp();
+  const { user, events, addEvent, updateEvent } = useApp();
 
   // --- Résolution de l'événement --------------------------------------------
 
@@ -59,6 +59,22 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
           <BackHeader title="Modifier l'événement" onBack={handleBack} />
 
           <Text style={styles.error}>Événement introuvable.</Text>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // --- Contrôle du propriétaire ---------------------------------------------
+
+  if (existingEvent && (!user || existingEvent.organizer.userId !== user.id)) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <BackHeader title="Modifier l'événement" onBack={handleBack} />
+
+          <Text style={styles.error}>
+            Vous ne pouvez modifier que vos propres événements.
+          </Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -107,20 +123,21 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         date: values.date,
         time: values.time,
         location,
+        maxParticipants: values.maxParticipants,
       });
 
       navigation.goBack();
       return;
     }
 
-    const event: Event = {
+    const event: NewEvent = {
       id: Date.now().toString(),
       title: values.title,
       description: values.description,
       date: values.date,
       time: values.time,
-      participated: false,
       location,
+      maxParticipants: values.maxParticipants,
     };
 
     await addEvent(event);
@@ -137,6 +154,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         date: existingEvent.date,
         time: existingEvent.time,
         locationName: existingEvent.location?.name ?? "",
+        maxParticipants: existingEvent.maxParticipants,
       }
     : undefined;
 
@@ -159,6 +177,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
 
           <EventForm
             initialValues={initialValues}
+            currentParticipantCount={existingEvent?.participantIds.length ?? 0}
             submitLabel={
               existingEvent
                 ? "Enregistrer les modifications"

@@ -5,8 +5,11 @@
 import type { Event } from "../types";
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTES
 // ============================================================================
+
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 24;
 
 export const EMAIL_MAX_LENGTH = 254;
 
@@ -22,9 +25,29 @@ export const EVENT_DESCRIPTION_MAX_LENGTH = 500;
 export const EVENT_LOCATION_MIN_LENGTH = 2;
 export const EVENT_LOCATION_MAX_LENGTH = 120;
 
+export const EVENT_CAPACITY_MIN = 1;
+export const EVENT_CAPACITY_MAX = 9999;
+
 // ============================================================================
 // VALIDATION DE L'AUTHENTIFICATION
 // ============================================================================
+
+// --- Nom d'utilisateur -------------------------------------------------------
+
+export function isValidUsername(username: string) {
+  const normalizedUsername = username.trim();
+
+  if (
+    normalizedUsername.length < USERNAME_MIN_LENGTH ||
+    normalizedUsername.length > USERNAME_MAX_LENGTH
+  ) {
+    return false;
+  }
+
+  return /^[a-zA-Z0-9._-]+$/.test(normalizedUsername);
+}
+
+// --- Adresse e-mail ----------------------------------------------------------
 
 export function isValidEmail(email: string) {
   const normalizedEmail = email.trim();
@@ -35,6 +58,8 @@ export function isValidEmail(email: string) {
 
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
 }
+
+// --- Mot de passe ------------------------------------------------------------
 
 export function isValidPassword(password: string) {
   return (
@@ -77,6 +102,20 @@ export function isValidEventLocation(location: string) {
   return (
     normalizedLocation.length >= EVENT_LOCATION_MIN_LENGTH &&
     normalizedLocation.length <= EVENT_LOCATION_MAX_LENGTH
+  );
+}
+
+// --- Capacité ----------------------------------------------------------------
+
+export function isValidEventCapacity(capacity?: number) {
+  if (capacity === undefined) {
+    return true;
+  }
+
+  return (
+    Number.isInteger(capacity) &&
+    capacity >= EVENT_CAPACITY_MIN &&
+    capacity <= EVENT_CAPACITY_MAX
   );
 }
 

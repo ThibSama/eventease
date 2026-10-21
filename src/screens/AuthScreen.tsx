@@ -22,8 +22,11 @@ import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
   isValidEmail,
   isValidPassword,
+  isValidUsername,
 } from "../utils/validation";
 
 // ============================================================================
@@ -35,8 +38,11 @@ export function AuthScreen() {
 
   // --- État du formulaire ----------------------------------------------------
 
+  const [identifier, setIdentifier] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -44,13 +50,6 @@ export function AuthScreen() {
   // --- Soumission ------------------------------------------------------------
 
   async function handleSubmit() {
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!isValidEmail(normalizedEmail)) {
-      setError("Veuillez saisir une adresse email valide.");
-      return;
-    }
-
     if (!isValidPassword(password)) {
       setError(
         `Le mot de passe doit contenir entre ${PASSWORD_MIN_LENGTH} et ${PASSWORD_MAX_LENGTH} caractères.`,
@@ -63,14 +62,45 @@ export function AuthScreen() {
 
     try {
       if (isRegistering) {
-        await register(normalizedEmail, password);
+        const normalizedUsername = username.trim();
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (!isValidUsername(normalizedUsername)) {
+          setError(
+            `Le nom d'utilisateur doit contenir entre ${USERNAME_MIN_LENGTH} et ${USERNAME_MAX_LENGTH} caractères et uniquement des lettres, chiffres, points, tirets ou underscores.`,
+          );
+          return;
+        }
+
+        if (!isValidEmail(normalizedEmail)) {
+          setError("Veuillez saisir une adresse email valide.");
+          return;
+        }
+
+        const result = await register(
+          normalizedUsername,
+          normalizedEmail,
+          password,
+        );
+
+        if (result === "username-taken") {
+          setError("Ce nom d'utilisateur est déjà utilisé.");
+        } else if (result === "email-taken") {
+          setError("Cette adresse email est déjà utilisée.");
+        }
+
         return;
       }
 
-      const success = await login(normalizedEmail, password);
+      if (!identifier.trim()) {
+        setError("Veuillez saisir votre email ou votre nom d'utilisateur.");
+        return;
+      }
+
+      const success = await login(identifier, password);
 
       if (!success) {
-        setError("Email ou mot de passe incorrect.");
+        setError("Identifiant ou mot de passe incorrect.");
       }
     } finally {
       setSubmitting(false);
@@ -121,17 +151,43 @@ export function AuthScreen() {
               {isRegistering ? "NOUVEAU COMPTE" : "VOTRE ESPACE"}
             </Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Adresse e-mail"
-              placeholderTextColor={colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              maxLength={EMAIL_MAX_LENGTH}
-            />
+            {isRegistering ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nom d'utilisateur"
+                  placeholderTextColor={colors.textMuted}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={USERNAME_MAX_LENGTH}
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Adresse e-mail"
+                  placeholderTextColor={colors.textMuted}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  maxLength={EMAIL_MAX_LENGTH}
+                />
+              </>
+            ) : (
+              <TextInput
+                style={styles.input}
+                placeholder="E-mail ou nom d'utilisateur"
+                placeholderTextColor={colors.textMuted}
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={EMAIL_MAX_LENGTH}
+              />
+            )}
 
             <TextInput
               style={styles.input}

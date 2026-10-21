@@ -11,12 +11,14 @@ import { Calendar, type DateData } from "react-native-calendars";
 import { calendarTheme, colors } from "../theme";
 import type { EventFormValues } from "../types";
 import {
+  EVENT_CAPACITY_MAX,
   EVENT_DESCRIPTION_MAX_LENGTH,
   EVENT_LOCATION_MAX_LENGTH,
   EVENT_TITLE_MAX_LENGTH,
   formatEventDate,
   getTodayDate,
   isEventPast,
+  isValidEventCapacity,
   isValidEventDate,
   isValidEventDescription,
   isValidEventLocation,
@@ -30,12 +32,13 @@ import { AppButton } from "./AppButton";
 
 type EventFormProps = {
   initialValues?: EventFormValues;
+  currentParticipantCount?: number;
   submitLabel?: string;
   onSubmit: (values: EventFormValues) => Promise<void>;
 };
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTES
 // ============================================================================
 
 const HOURS = Array.from({ length: 24 }, (_, index) =>
@@ -81,6 +84,7 @@ function getDefaultTime() {
 
 export function EventForm({
   initialValues,
+  currentParticipantCount = 0,
   submitLabel = "Enregistrer",
   onSubmit,
 }: EventFormProps) {
@@ -108,6 +112,10 @@ export function EventForm({
     initialValues?.locationName ?? "",
   );
 
+  const [capacity, setCapacity] = useState(
+    initialValues?.maxParticipants?.toString() ?? "",
+  );
+
   const [error, setError] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -132,6 +140,10 @@ export function EventForm({
 
     const normalizedLocation = locationName.trim();
 
+    const normalizedCapacity = capacity.trim();
+
+    let maxParticipants: number | undefined;
+
     if (!isValidEventTitle(normalizedTitle)) {
       setError("Le titre doit contenir entre 3 et 80 caractères.");
       return;
@@ -150,6 +162,24 @@ export function EventForm({
     if (!isValidEventLocation(normalizedLocation)) {
       setError("Le lieu doit contenir entre 2 et 120 caractères.");
       return;
+    }
+
+    if (normalizedCapacity) {
+      maxParticipants = Number(normalizedCapacity);
+
+      if (!isValidEventCapacity(maxParticipants)) {
+        setError(
+          `Le nombre de places doit être compris entre 1 et ${EVENT_CAPACITY_MAX}.`,
+        );
+        return;
+      }
+
+      if (maxParticipants < currentParticipantCount) {
+        setError(
+          `La capacité ne peut pas être inférieure aux ${currentParticipantCount} participation${currentParticipantCount > 1 ? "s" : ""} déjà enregistrée${currentParticipantCount > 1 ? "s" : ""}.`,
+        );
+        return;
+      }
     }
 
     // En édition, une date devenue passée peut être conservée telle quelle.
@@ -171,6 +201,7 @@ export function EventForm({
         date,
         time,
         locationName: normalizedLocation,
+        maxParticipants,
       });
     } finally {
       setSubmitting(false);
@@ -330,6 +361,28 @@ export function EventForm({
       />
 
       <Text style={styles.helper}>Facultatif</Text>
+
+      <Text style={styles.label}>Nombre de places</Text>
+
+      <TextInput
+        style={styles.input}
+        value={capacity}
+        onChangeText={(value) => {
+          setCapacity(value.replace(/\D/g, ""));
+          setError(null);
+        }}
+        placeholder="Ex. 20"
+        placeholderTextColor={colors.textMuted}
+        keyboardType="number-pad"
+        maxLength={4}
+      />
+
+      <Text style={styles.helper}>
+        {currentParticipantCount > 0
+          ? `${currentParticipantCount} participation${currentParticipantCount > 1 ? "s" : ""} actuellement · `
+          : ""}
+        Laisser vide pour un événement sans limite.
+      </Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
