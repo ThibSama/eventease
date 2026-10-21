@@ -1,4 +1,10 @@
 // ============================================================================
+// IMPORTS
+// ============================================================================
+
+import type { NavigatorScreenParams } from "@react-navigation/native";
+
+// ============================================================================
 // AUTHENTIFICATION
 // ============================================================================
 
@@ -39,10 +45,19 @@ export type EventFormValues = {
 // NAVIGATION
 // ============================================================================
 
-export type RootStackParamList = {
-  Auth: undefined;
+export type AppTabParamList = {
+  Home: undefined;
   Events: undefined;
   Calendar: undefined;
+  Profile: undefined;
+};
+
+export type RootStackParamList = {
+  Auth: undefined;
+  AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
+  EventDetails: {
+    eventId: string;
+  };
   EventForm:
     | {
         eventId?: string;

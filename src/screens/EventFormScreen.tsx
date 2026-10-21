@@ -3,11 +3,20 @@
 // ============================================================================
 
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Button, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { BackHeader } from "../components/BackHeader";
 import { EventForm } from "../components/EventForm";
 import { useApp } from "../hooks/useApp";
 import { geocodeLocation } from "../services/geocoding";
+import { colors, spacing } from "../theme";
 import type {
   Event,
   EventFormValues,
@@ -39,13 +48,19 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
     ? events.find((event) => event.id === eventId)
     : undefined;
 
+  function handleBack() {
+    navigation.goBack();
+  }
+
   if (eventId && !existingEvent) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>Événement introuvable.</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <BackHeader title="Modifier l'événement" onBack={handleBack} />
 
-        <Button title="Retour" onPress={() => navigation.goBack()} />
-      </View>
+          <Text style={styles.error}>Événement introuvable.</Text>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -128,15 +143,32 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
   // --- Rendu -----------------------------------------------------------------
 
   return (
-    <View style={styles.container}>
-      <EventForm
-        initialValues={initialValues}
-        submitLabel={
-          existingEvent ? "Enregistrer les modifications" : "Créer l'événement"
-        }
-        onSubmit={handleSubmit}
-      />
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          <BackHeader
+            title={
+              existingEvent ? "Modifier l'événement" : "Créer un événement"
+            }
+            onBack={handleBack}
+          />
+
+          <EventForm
+            initialValues={initialValues}
+            submitLabel={
+              existingEvent
+                ? "Enregistrer les modifications"
+                : "Créer l’événement"
+            }
+            onSubmit={handleSubmit}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -145,12 +177,24 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: 24,
+    backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
+  },
+  content: {
+    width: "100%",
+    maxWidth: 520,
+    alignSelf: "center",
+    paddingHorizontal: spacing.screen + 2,
+    paddingBottom: 24,
   },
   error: {
+    marginTop: 32,
+    color: colors.textMuted,
+    fontSize: 14,
     textAlign: "center",
-    marginBottom: 16,
   },
 });

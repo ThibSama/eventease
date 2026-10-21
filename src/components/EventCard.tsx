@@ -2,13 +2,21 @@
 // IMPORTS
 // ============================================================================
 
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useEventWeather } from "../hooks/useEventWeather";
-import type { UserCoordinates, UserLocationStatus } from "../hooks/useLocation";
+import type { UserCoordinates } from "../hooks/useLocation";
+import { colors, radius } from "../theme";
 import type { Event } from "../types";
-import { calculateDistanceKm, formatDistance } from "../utils/distance";
-import { formatEventDateTime, isEventPast } from "../utils/validation";
+import { formatDistance } from "../utils/distance";
+import {
+  formatDayNumber,
+  formatShortDate,
+  getEventDistanceKm,
+  getShortLocationName,
+} from "../utils/eventDisplay";
+import { isEventPast } from "../utils/validation";
+import { Badge } from "./Badge";
 
 // ============================================================================
 // TYPES
@@ -17,10 +25,8 @@ import { formatEventDateTime, isEventPast } from "../utils/validation";
 type EventCardProps = {
   event: Event;
   userCoordinates: UserCoordinates | null;
-  locationStatus: UserLocationStatus;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onToggleParticipated: (id: string) => void;
+  dateFormat?: "day" | "short";
+  onPress: (id: string) => void;
 };
 
 // ============================================================================
@@ -30,154 +36,90 @@ type EventCardProps = {
 export function EventCard({
   event,
   userCoordinates,
-  locationStatus,
-  onEdit,
-  onDelete,
-  onToggleParticipated,
+  dateFormat = "day",
+  onPress,
 }: EventCardProps) {
   // --- État de l'événement ---------------------------------------------------
 
   const eventPast = isEventPast(event.date, event.time);
 
-  // --- Localisation et distance ---------------------------------------------
+  // --- Lieu et distance ------------------------------------------------------
 
-  const eventCoordinates =
-    event.location?.latitude !== undefined &&
-    event.location?.longitude !== undefined
-      ? {
-          latitude: event.location.latitude,
-          longitude: event.location.longitude,
-        }
-      : null;
+  const distance = getEventDistanceKm(event, userCoordinates);
 
-  const distance =
-    userCoordinates && eventCoordinates
-      ? calculateDistanceKm(userCoordinates, eventCoordinates)
-      : null;
-
-  // --- Météo ----------------------------------------------------------------
-
-  // La météo reste optionnelle et n'est chargée que pour les événements futurs.
-  const { weather, status: weatherStatus } = useEventWeather({
-    date: event.date,
-    latitude: eventCoordinates?.latitude,
-    longitude: eventCoordinates?.longitude,
-    enabled: !eventPast,
-  });
+  const locationLabel = event.location
+    ? [
+        getShortLocationName(event),
+        distance !== null ? formatDistance(distance) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   // --- Actions ---------------------------------------------------------------
 
-  function handleEdit() {
-    onEdit(event.id);
-  }
-
-  function handleDelete() {
-    onDelete(event.id);
-  }
-
-  function handleToggleParticipated() {
-    onToggleParticipated(event.id);
+  function handlePress() {
+    onPress(event.id);
   }
 
   // --- Rendu -----------------------------------------------------------------
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{event.title}</Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ouvrir ${event.title}`}
+      onPress={handlePress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <View style={[styles.accent, eventPast && styles.accentPast]} />
 
-      <Text style={styles.date}>
-        {formatEventDateTime(event.date, event.time)}
-      </Text>
+      <View style={styles.dateColumn}>
+        <Text
+          style={dateFormat === "day" ? styles.dayNumber : styles.shortDate}>
+          {dateFormat === "day"
+            ? formatDayNumber(event.date)
+            : formatShortDate(event.date)}
+        </Text>
 
-      {event.location ? (
-        <>
-          <Text style={styles.location}>Lieu : {event.location.name}</Text>
-
-          {distance !== null ? (
-            <Text style={styles.distance}>
-              Distance : environ {formatDistance(distance)}
-            </Text>
-          ) : eventCoordinates ? (
-            <Text style={styles.distance}>
-              {locationStatus === "loading"
-                ? "Distance : localisation en cours..."
-                : "Distance : localisation utilisateur indisponible"}
-            </Text>
-          ) : (
-            <Text style={styles.distance}>
-              Distance : coordonnées du lieu indisponibles
-            </Text>
-          )}
-
-          {!eventPast && eventCoordinates ? (
-            <View style={styles.weather}>
-              {weatherStatus === "loading" ? (
-                <Text>Météo : chargement...</Text>
-              ) : null}
-
-              {weatherStatus === "available" && weather ? (
-                <>
-                  <Text>Météo : {weather.condition}</Text>
-
-                  <Text>
-                    Températures : {Math.round(weather.minTemperature)}
-                    °C à {Math.round(weather.maxTemperature)}
-                    °C
-                  </Text>
-
-                  {weather.precipitationProbability !== null ? (
-                    <Text>
-                      Risque de pluie :{" "}
-                      {Math.round(weather.precipitationProbability)}%
-                    </Text>
-                  ) : null}
-                </>
-              ) : null}
-
-              {weatherStatus === "out-of-range" ? (
-                <Text>
-                  {
-                    "Météo : prévisions disponibles à l'approche de l'événement."
-                  }
-                </Text>
-              ) : null}
-
-              {weatherStatus === "unavailable" ? (
-                <Text>Météo : indisponible.</Text>
-              ) : null}
-            </View>
-          ) : null}
-        </>
-      ) : null}
-
-      <Text style={styles.description}>{event.description}</Text>
-
-      <Text style={styles.status}>
-        Statut : {eventPast ? "Passé" : "À venir"}
-      </Text>
-
-      <Text style={styles.participation}>
-        Participation : {event.participated ? "Participé" : "Non participé"}
-      </Text>
-
-      <View style={styles.actions}>
-        <Button
-          title={
-            eventPast
-              ? "Événement passé"
-              : event.participated
-                ? "Annuler la participation"
-                : "Rejoindre l'événement"
-          }
-          onPress={handleToggleParticipated}
-          disabled={eventPast}
-        />
-
-        <Button title="Modifier" onPress={handleEdit} />
-
-        <Button title="Supprimer" onPress={handleDelete} />
+        <Text style={styles.time}>{event.time}</Text>
       </View>
-    </View>
+
+      <View style={styles.content}>
+        <Text style={styles.title} numberOfLines={1}>
+          {event.title}
+        </Text>
+
+        {locationLabel ? (
+          <View style={styles.locationRow}>
+            <Image
+              source={require("../assets/images/design/icon-location.svg")}
+              style={styles.locationIcon}
+              contentFit="contain"
+            />
+
+            <Text style={styles.location} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.badges}>
+          <Badge
+            label={eventPast ? "Passé" : "À venir"}
+            tone={eventPast ? "past" : "upcoming"}
+          />
+
+          {event.participated ? (
+            <Badge label={eventPast ? "Participé" : "Inscrit"} tone="joined" />
+          ) : null}
+        </View>
+      </View>
+
+      <Image
+        source={require("../assets/images/design/icon-chevron-right.svg")}
+        style={styles.chevron}
+        contentFit="contain"
+      />
+    </Pressable>
   );
 }
 
@@ -187,43 +129,87 @@ export function EventCard({
 
 const styles = StyleSheet.create({
   card: {
+    minHeight: 103,
+    flexDirection: "row",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    paddingTop: 11,
+    paddingBottom: 10,
+    paddingRight: 8,
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  accent: {
+    position: "absolute",
+    left: -1,
+    top: 11,
+    width: 3,
+    height: 78,
+    borderRadius: 1,
+    backgroundColor: colors.primary,
+  },
+  accentPast: {
+    backgroundColor: colors.disabled,
+  },
+  dateColumn: {
+    width: 80,
+    paddingLeft: 14,
+  },
+  dayNumber: {
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: "700",
+    lineHeight: 30,
+  },
+  shortDate: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  time: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  content: {
+    flex: 1,
+    paddingLeft: 14,
+    paddingTop: 2,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
   },
-  date: {
-    marginBottom: 6,
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  locationIcon: {
+    width: 13,
+    height: 13,
   },
   location: {
-    marginBottom: 4,
-    fontWeight: "500",
+    flex: 1,
+    color: colors.textMuted,
+    fontSize: 12,
   },
-  distance: {
-    marginBottom: 6,
+  badges: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 10,
   },
-  weather: {
-    marginBottom: 8,
-  },
-  description: {
-    marginBottom: 12,
-  },
-  status: {
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  participation: {
-    fontWeight: "500",
-    marginBottom: 12,
-  },
-  actions: {
-    gap: 8,
-    alignItems: "flex-start",
+  chevron: {
+    width: 15,
+    height: 15,
+    marginTop: 9,
   },
 });

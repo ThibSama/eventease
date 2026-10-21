@@ -2,8 +2,22 @@
 // IMPORTS
 // ============================================================================
 
+import { Image } from "expo-image";
 import { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { AppButton } from "../components/AppButton";
+import { useApp } from "../hooks/useApp";
+import { colors } from "../theme";
 import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
@@ -11,7 +25,6 @@ import {
   isValidEmail,
   isValidPassword,
 } from "../utils/validation";
-import { useApp } from "../hooks/useApp";
 
 // ============================================================================
 // COMPOSANT
@@ -63,6 +76,7 @@ export function AuthScreen() {
       setSubmitting(false);
     }
   }
+
   // --- Changement de mode ----------------------------------------------------
 
   function handleToggleMode() {
@@ -73,47 +87,83 @@ export function AuthScreen() {
   // --- Rendu -----------------------------------------------------------------
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>EventEase</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.hero}>
+            <View style={styles.heroCanvas}>
+              <Image
+                source={require("../assets/images/design/auth-orbit.svg")}
+                style={styles.illustration}
+                contentFit="fill"
+              />
 
-      <Text style={styles.subtitle}>
-        {isRegistering ? "Inscription" : "Connexion"}
-      </Text>
+              <View style={styles.brand}>
+                <Text style={styles.brandTitle}>
+                  Event <Text style={styles.brandAccent}>Ease</Text>
+                </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
-        maxLength={EMAIL_MAX_LENGTH}
-      />
+                <Text style={styles.tagline}>
+                  DES ÉVÉNEMENTS PLUS PROCHES DE VOUS
+                </Text>
+              </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        maxLength={PASSWORD_MAX_LENGTH}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+              <View style={styles.orbitLine} />
+            </View>
+          </View>
 
-      <View style={styles.primaryButton}>
-        <Button
-          title={isRegistering ? "Créer le compte" : "Se connecter"}
-          onPress={handleSubmit}
-          disabled={submitting}
-        />
-      </View>
+          <View style={styles.form}>
+            <Text style={styles.sectionLabel}>
+              {isRegistering ? "NOUVEAU COMPTE" : "VOTRE ESPACE"}
+            </Text>
 
-      <Button
-        title={isRegistering ? "J'ai déjà un compte" : "Créer un compte"}
-        onPress={handleToggleMode}
-      />
-    </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Adresse e-mail"
+              placeholderTextColor={colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              maxLength={EMAIL_MAX_LENGTH}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Mot de passe"
+              placeholderTextColor={colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              maxLength={PASSWORD_MAX_LENGTH}
+            />
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <View style={styles.actions}>
+              <AppButton
+                label={isRegistering ? "Créer le compte  →" : "Se connecter  →"}
+                onPress={handleSubmit}
+                disabled={submitting}
+              />
+
+              <AppButton
+                label={
+                  isRegistering ? "J'ai déjà un compte" : "Créer un compte"
+                }
+                variant="secondary"
+                onPress={handleToggleMode}
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -122,34 +172,96 @@ export function AuthScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    justifyContent: "center",
-    padding: 24,
+    backgroundColor: colors.background,
   },
-  title: {
-    fontSize: 32,
+  flex: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 32,
+  },
+  hero: {
+    height: 340,
+    overflow: "hidden",
+    alignItems: "center",
+  },
+  heroCanvas: {
+    width: 390,
+    height: 340,
+  },
+  illustration: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 390,
+    height: 340,
+  },
+  brand: {
+    position: "absolute",
+    top: 185,
+    left: 42,
+    right: 20,
+  },
+  brandTitle: {
+    color: colors.text,
+    fontSize: 44,
     fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 20,
-    textAlign: "center",
-    marginBottom: 24,
+  brandAccent: {
+    color: colors.primary,
+  },
+  tagline: {
+    marginTop: 4,
+    marginLeft: 3,
+    color: "#e8f6ff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  orbitLine: {
+    position: "absolute",
+    top: 320,
+    left: 82,
+    width: 226,
+    height: 1,
+    backgroundColor: colors.primary,
+  },
+  form: {
+    width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
+    paddingHorizontal: 24,
+    paddingTop: 72,
+  },
+  sectionLabel: {
+    marginBottom: 22,
+    marginLeft: 4,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
   },
   input: {
+    height: 55,
+    marginBottom: 14,
+    paddingHorizontal: 17,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    borderColor: colors.border,
+    borderRadius: 12,
+    color: colors.text,
+    fontSize: 14,
   },
   error: {
-    marginBottom: 12,
+    marginBottom: 8,
+    color: colors.danger,
+    fontSize: 13,
     textAlign: "center",
   },
-  primaryButton: {
-    marginBottom: 8,
+  actions: {
+    gap: 14,
+    marginTop: 19,
+    marginHorizontal: -3,
   },
 });
