@@ -4,25 +4,48 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { Event, User } from "../types";
-import { isValidEventTime } from "../utils/validation";
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type StoredEvent = Omit<Event, "time"> & {
-  time?: string;
-};
+import type { Event, EventOrganizer, User } from "../types";
 
 // ============================================================================
 // CONSTANTES
 // ============================================================================
 
-const USER_KEY = "@eventease/user";
-const SESSION_KEY = "@eventease/session";
-const EVENTS_KEY = "@eventease/events";
-const DEMO_SEED_KEY = "@eventease/demo-seed-v1";
+const STORAGE_VERSION_KEY = "@eventease/storage-version";
+const STORAGE_VERSION = "2";
+
+const USERS_KEY = "@eventease/v2/users";
+const SESSION_KEY = "@eventease/v2/session";
+const EVENTS_KEY = "@eventease/v2/events";
+
+const EVENTEASE_ORGANIZER: EventOrganizer = {
+  userId: "eventease",
+  username: "EventEase",
+};
+
+// ============================================================================
+// INITIALISATION DU STOCKAGE
+// ============================================================================
+
+export async function initializeStorage() {
+  const currentVersion = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
+
+  if (currentVersion === STORAGE_VERSION) {
+    return;
+  }
+
+  // Le passage en version 2 repart volontairement d'un stockage propre.
+  const storedKeys = await AsyncStorage.getAllKeys();
+
+  const eventEaseKeys = storedKeys.filter((key) =>
+    key.startsWith("@eventease/"),
+  );
+
+  if (eventEaseKeys.length > 0) {
+    await AsyncStorage.multiRemove(eventEaseKeys);
+  }
+
+  await AsyncStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+}
 
 // ============================================================================
 // UTILITAIRES
@@ -56,6 +79,7 @@ function createDemoEvents(): Event[] {
       date: getRelativeDate(1),
       time: "14:30",
       participated: false,
+      organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Cambrai, Hauts-de-France, France",
         latitude: 50.1767,
@@ -70,6 +94,7 @@ function createDemoEvents(): Event[] {
       date: getRelativeDate(3),
       time: "10:00",
       participated: true,
+      organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Lille, Hauts-de-France, France",
         latitude: 50.6292,
@@ -84,6 +109,7 @@ function createDemoEvents(): Event[] {
       date: getRelativeDate(7),
       time: "19:00",
       participated: false,
+      organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Douai, Hauts-de-France, France",
         latitude: 50.3707,
@@ -98,6 +124,7 @@ function createDemoEvents(): Event[] {
       date: getRelativeDate(-5),
       time: "18:30",
       participated: true,
+      organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Valenciennes, Hauts-de-France, France",
         latitude: 50.357,
@@ -107,45 +134,32 @@ function createDemoEvents(): Event[] {
   ];
 }
 
-async function seedDemoEvents(events: Event[]) {
-  const alreadySeeded = await AsyncStorage.getItem(DEMO_SEED_KEY);
+// ============================================================================
+// STOCKAGE DES UTILISATEURS
+// ============================================================================
 
-  if (alreadySeeded) {
-    return events;
+export async function saveUsers(users: User[]) {
+  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+export async function getUsers(): Promise<User[]> {
+  const value = await AsyncStorage.getItem(USERS_KEY);
+
+  if (!value) {
+    return [];
   }
 
-  const demoEvents = createDemoEvents();
-  const existingIds = new Set(events.map((event) => event.id));
+  try {
+    const users = JSON.parse(value) as User[];
 
-  // Les identifiants fixes évitent les doublons si l'initialisation est interrompue.
-  const missingDemoEvents = demoEvents.filter(
-    (event) => !existingIds.has(event.id),
-  );
-
-  const seededEvents = [...events, ...missingDemoEvents];
-
-  await saveEvents(seededEvents);
-  await AsyncStorage.setItem(DEMO_SEED_KEY, "true");
-
-  return seededEvents;
+    return Array.isArray(users) ? users : [];
+  } catch {
+    return [];
+  }
 }
 
 // ============================================================================
-// STOCKAGE UTILISATEUR
-// ============================================================================
-
-export async function saveUser(user: User) {
-  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-export async function getUser(): Promise<User | null> {
-  const value = await AsyncStorage.getItem(USER_KEY);
-
-  return value ? JSON.parse(value) : null;
-}
-
-// ============================================================================
-// STOCKAGE SESSION
+// STOCKAGE DE LA SESSION
 // ============================================================================
 
 export async function saveSession(user: User) {
@@ -155,7 +169,15 @@ export async function saveSession(user: User) {
 export async function getSession(): Promise<User | null> {
   const value = await AsyncStorage.getItem(SESSION_KEY);
 
-  return value ? JSON.parse(value) : null;
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value) as User;
+  } catch {
+    return null;
+  }
 }
 
 export async function clearSession() {
@@ -176,27 +198,21 @@ export async function getEvents(): Promise<Event[]> {
   // --- Premier lancement -----------------------------------------------------
 
   if (!value) {
-    return seedDemoEvents([]);
+    const demoEvents = createDemoEvents();
+
+    await saveEvents(demoEvents);
+
+    return demoEvents;
   }
 
-  // --- Chargement et migration ----------------------------------------------
+  // --- Chargement ------------------------------------------------------------
 
   try {
-    const storedEvents = JSON.parse(value) as StoredEvent[];
+    const events = JSON.parse(value) as Event[];
 
-    if (!Array.isArray(storedEvents)) {
-      return [];
-    }
-
-    // Les anciens événements sans heure sont migrés avec une valeur par défaut.
-    const migratedEvents = storedEvents.map((event) => ({
-      ...event,
-      time: event.time && isValidEventTime(event.time) ? event.time : "00:00",
-    }));
-
-    return seedDemoEvents(migratedEvents);
+    return Array.isArray(events) ? events : [];
   } catch {
-    // Un stockage illisible ne doit pas être remplacé automatiquement.
+    // Un stockage illisible ne doit pas empêcher l'application de démarrer.
     return [];
   }
 }

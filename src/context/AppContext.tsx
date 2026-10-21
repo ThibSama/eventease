@@ -8,30 +8,38 @@ import {
   clearSession,
   getEvents,
   getSession,
-  getUser,
+  getUsers,
+  initializeStorage,
   saveEvents,
   saveSession,
-  saveUser,
+  saveUsers,
 } from "../services/storage";
-import type { Event, User } from "../types";
+import type { Event, NewEvent, User } from "../types";
+import { createUserId } from "../utils/user";
 import { isEventPast } from "../utils/validation";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
+type RegisterResult = "success" | "email-taken" | "username-taken";
+
 type AppContextType = {
   user: User | null;
   events: Event[];
   loading: boolean;
 
-  register: (email: string, password: string) => Promise<void>;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+  ) => Promise<RegisterResult>;
 
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (identifier: string, password: string) => Promise<boolean>;
 
   logout: () => Promise<void>;
 
-  addEvent: (event: Event) => Promise<void>;
+  addEvent: (event: NewEvent) => Promise<void>;
 
   updateEvent: (event: Event) => Promise<void>;
 
@@ -45,7 +53,7 @@ type AppProviderProps = {
 };
 
 // ============================================================================
-// CONTEXT
+// CONTEXTE
 // ============================================================================
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -65,6 +73,8 @@ export function AppProvider({ children }: AppProviderProps) {
 
   useEffect(() => {
     async function restoreData() {
+      await initializeStorage();
+
       const [session, savedEvents] = await Promise.all([
         getSession(),
         getEvents(),
@@ -84,28 +94,63 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // --- Inscription -----------------------------------------------------------
 
-  async function register(email: string, password: string) {
+  async function register(
+    username: string,
+    email: string,
+    password: string,
+  ): Promise<RegisterResult> {
+    const users = await getUsers();
+
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const usernameAlreadyExists = users.some(
+      (existingUser) =>
+        existingUser.username.toLowerCase() ===
+        normalizedUsername.toLowerCase(),
+    );
+
+    if (usernameAlreadyExists) {
+      return "username-taken";
+    }
+
+    const emailAlreadyExists = users.some(
+      (existingUser) => existingUser.email.toLowerCase() === normalizedEmail,
+    );
+
+    if (emailAlreadyExists) {
+      return "email-taken";
+    }
+
     const newUser: User = {
-      email,
+      id: createUserId(),
+      username: normalizedUsername,
+      email: normalizedEmail,
       password,
     };
 
-    await saveUser(newUser);
+    await saveUsers([...users, newUser]);
     await saveSession(newUser);
 
     setUser(newUser);
+
+    return "success";
   }
 
   // --- Connexion -------------------------------------------------------------
 
-  async function login(email: string, password: string) {
-    const savedUser = await getUser();
+  async function login(identifier: string, password: string) {
+    const users = await getUsers();
 
-    if (
-      !savedUser ||
-      savedUser.email !== email ||
-      savedUser.password !== password
-    ) {
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+
+    const savedUser = users.find(
+      (existingUser) =>
+        existingUser.email.toLowerCase() === normalizedIdentifier ||
+        existingUser.username.toLowerCase() === normalizedIdentifier,
+    );
+
+    if (!savedUser || savedUser.password !== password) {
       return false;
     }
 
@@ -128,8 +173,20 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // --- Création --------------------------------------------------------------
 
-  async function addEvent(event: Event) {
-    const updatedEvents = [...events, event];
+  async function addEvent(event: NewEvent) {
+    if (!user) {
+      return;
+    }
+
+    const createdEvent: Event = {
+      ...event,
+      organizer: {
+        userId: user.id,
+        username: user.username,
+      },
+    };
+
+    const updatedEvents = [...events, createdEvent];
 
     setEvents(updatedEvents);
     await saveEvents(updatedEvents);
@@ -138,8 +195,25 @@ export function AppProvider({ children }: AppProviderProps) {
   // --- Modification ----------------------------------------------------------
 
   async function updateEvent(event: Event) {
-    const updatedEvents = events.map((currentEvent) =>
-      currentEvent.id === event.id ? event : currentEvent,
+    if (!user) {
+      return;
+    }
+
+    const currentEvent = events.find(
+      (existingEvent) => existingEvent.id === event.id,
+    );
+
+    if (!currentEvent || currentEvent.organizer.userId !== user.id) {
+      return;
+    }
+
+    const updatedEvents = events.map((existingEvent) =>
+      existingEvent.id === event.id
+        ? {
+            ...event,
+            organizer: currentEvent.organizer,
+          }
+        : existingEvent,
     );
 
     setEvents(updatedEvents);
@@ -149,6 +223,16 @@ export function AppProvider({ children }: AppProviderProps) {
   // --- Suppression -----------------------------------------------------------
 
   async function deleteEvent(id: string) {
+    if (!user) {
+      return;
+    }
+
+    const currentEvent = events.find((event) => event.id === id);
+
+    if (!currentEvent || currentEvent.organizer.userId !== user.id) {
+      return;
+    }
+
     const updatedEvents = events.filter((event) => event.id !== id);
 
     setEvents(updatedEvents);
@@ -158,6 +242,10 @@ export function AppProvider({ children }: AppProviderProps) {
   // --- Participation ---------------------------------------------------------
 
   async function toggleParticipated(id: string) {
+    if (!user) {
+      return;
+    }
+
     const currentEvent = events.find((event) => event.id === id);
 
     if (!currentEvent) {

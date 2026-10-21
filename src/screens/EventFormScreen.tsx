@@ -18,9 +18,9 @@ import { useApp } from "../hooks/useApp";
 import { geocodeLocation } from "../services/geocoding";
 import { colors, spacing } from "../theme";
 import type {
-  Event,
   EventFormValues,
   EventLocation,
+  NewEvent,
   RootStackParamList,
 } from "../types";
 
@@ -38,7 +38,7 @@ type EventFormScreenProps = NativeStackScreenProps<
 // ============================================================================
 
 export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
-  const { events, addEvent, updateEvent } = useApp();
+  const { user, events, addEvent, updateEvent } = useApp();
 
   // --- Résolution de l'événement --------------------------------------------
 
@@ -59,6 +59,22 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
           <BackHeader title="Modifier l'événement" onBack={handleBack} />
 
           <Text style={styles.error}>Événement introuvable.</Text>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // --- Contrôle du propriétaire ---------------------------------------------
+
+  if (existingEvent && (!user || existingEvent.organizer.userId !== user.id)) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <BackHeader title="Modifier l'événement" onBack={handleBack} />
+
+          <Text style={styles.error}>
+            Vous ne pouvez modifier que vos propres événements.
+          </Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -113,7 +129,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       return;
     }
 
-    const event: Event = {
+    const event: NewEvent = {
       id: Date.now().toString(),
       title: values.title,
       description: values.description,

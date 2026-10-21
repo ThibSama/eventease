@@ -41,11 +41,15 @@ export function EventDetailsScreen({
   navigation,
   route,
 }: EventDetailsScreenProps) {
-  const { events, deleteEvent, toggleParticipated } = useApp();
+  const { user, events, deleteEvent, toggleParticipated } = useApp();
 
   // --- Résolution de l'événement --------------------------------------------
 
   const event = events.find((item) => item.id === route.params.eventId);
+
+  const isOrganizer = Boolean(
+    event && user && event.organizer.userId === user.id,
+  );
 
   // --- Localisation utilisateur ---------------------------------------------
 
@@ -76,9 +80,11 @@ export function EventDetailsScreen({
   }
 
   function handleEdit() {
-    if (event) {
-      navigation.navigate("EventForm", { eventId: event.id });
+    if (!event || !isOrganizer) {
+      return;
     }
+
+    navigation.navigate("EventForm", { eventId: event.id });
   }
 
   async function handleToggleParticipated() {
@@ -88,7 +94,7 @@ export function EventDetailsScreen({
   }
 
   async function handleDelete() {
-    if (!event) {
+    if (!event || !isOrganizer) {
       return;
     }
 
@@ -212,6 +218,12 @@ export function EventDetailsScreen({
           <Text style={styles.info}>Lieu non renseigné</Text>
         )}
 
+        <View style={styles.organizer}>
+          <Text style={styles.organizerLabel}>ORGANISÉ PAR</Text>
+
+          <Text style={styles.organizerName}>@{event.organizer.username}</Text>
+        </View>
+
         {distanceLabel || weatherStatus !== "idle" ? (
           <View style={styles.distanceRow}>
             <Text style={[styles.info, styles.distance]}>
@@ -269,49 +281,51 @@ export function EventDetailsScreen({
             />
           )}
 
-          {confirmingDelete ? (
-            <>
-              <Text style={styles.deleteHint}>
-                Supprimer définitivement cet événement ?
-              </Text>
+          {isOrganizer ? (
+            confirmingDelete ? (
+              <>
+                <Text style={styles.deleteHint}>
+                  Supprimer définitivement cet événement ?
+                </Text>
 
+                <View style={styles.secondaryActions}>
+                  <View style={styles.secondaryAction}>
+                    <AppButton
+                      label="Annuler"
+                      variant="secondary"
+                      onPress={handleCancelDelete}
+                    />
+                  </View>
+
+                  <View style={styles.secondaryAction}>
+                    <AppButton
+                      label="Supprimer"
+                      variant="danger"
+                      onPress={handleDelete}
+                    />
+                  </View>
+                </View>
+              </>
+            ) : (
               <View style={styles.secondaryActions}>
                 <View style={styles.secondaryAction}>
                   <AppButton
-                    label="Annuler"
+                    label="Modifier"
                     variant="secondary"
-                    onPress={handleCancelDelete}
+                    onPress={handleEdit}
                   />
                 </View>
 
                 <View style={styles.secondaryAction}>
                   <AppButton
                     label="Supprimer"
-                    variant="danger"
+                    variant="secondary"
                     onPress={handleDelete}
                   />
                 </View>
               </View>
-            </>
-          ) : (
-            <View style={styles.secondaryActions}>
-              <View style={styles.secondaryAction}>
-                <AppButton
-                  label="Modifier"
-                  variant="secondary"
-                  onPress={handleEdit}
-                />
-              </View>
-
-              <View style={styles.secondaryAction}>
-                <AppButton
-                  label="Supprimer"
-                  variant="secondary"
-                  onPress={handleDelete}
-                />
-              </View>
-            </View>
-          )}
+            )
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -383,6 +397,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: colors.textMuted,
     fontSize: 14,
+  },
+  organizer: {
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  organizerLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  organizerName: {
+    marginTop: 4,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
   },
   distanceRow: {
     flexDirection: "row",

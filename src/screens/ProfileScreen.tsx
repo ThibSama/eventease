@@ -11,7 +11,7 @@ import { type UserLocationStatus, useLocation } from "../hooks/useLocation";
 import { colors, radius, spacing } from "../theme";
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTES
 // ============================================================================
 
 const LOCATION_STATUS_LABELS: Record<
@@ -68,12 +68,16 @@ export function ProfileScreen() {
         <View style={styles.identity}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {user?.email.charAt(0).toUpperCase() ?? "?"}
+              {user?.username.charAt(0).toUpperCase() ?? "?"}
             </Text>
           </View>
 
           <View style={styles.identityText}>
-            <Text style={styles.label}>CONNECTÉ AVEC</Text>
+            <Text style={styles.label}>COMPTE</Text>
+
+            <Text style={styles.username} numberOfLines={1}>
+              @{user?.username}
+            </Text>
 
             <Text style={styles.email} numberOfLines={1}>
               {user?.email}
@@ -178,11 +182,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
   },
-  email: {
+  username: {
     marginTop: 4,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
+  },
+  email: {
+    marginTop: 2,
+    color: colors.textMuted,
+    fontSize: 13,
   },
   sectionLabel: {
     marginTop: 28,
