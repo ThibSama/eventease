@@ -11,11 +11,11 @@ import type { Event, EventOrganizer, User } from "../types";
 // ============================================================================
 
 const STORAGE_VERSION_KEY = "@eventease/storage-version";
-const STORAGE_VERSION = "4";
+const STORAGE_VERSION = "5";
 
-const USERS_KEY = "@eventease/v4/users";
-const SESSION_KEY = "@eventease/v4/session";
-const EVENTS_KEY = "@eventease/v4/events";
+const USERS_KEY = "@eventease/v5/users";
+const SESSION_KEY = "@eventease/v5/session";
+const EVENTS_KEY = "@eventease/v5/events";
 
 // ============================================================================
 // UTILISATEURS DE DÉMONSTRATION
@@ -53,9 +53,8 @@ export async function initializeStorage() {
     return;
   }
 
-  // La version 4 introduit des comptes de démonstration et une activité
-  // multi-utilisateurs cohérente. Les anciennes données de test sont
-  // volontairement supprimées.
+  // La version 5 garantit que l'organisateur reste distinct des participants
+  // et initialise une activité multi-utilisateurs cohérente.
   const storedKeys = await AsyncStorage.getAllKeys();
 
   const eventEaseKeys = storedKeys.filter((key) =>
@@ -169,11 +168,7 @@ function createDemoEvents(): Event[] {
         "Une rencontre entre les membres de l'association pour présenter les activités et les prochains événements.",
       date: getRelativeDate(-5),
       time: "18:30",
-      participantIds: [
-        DEMO_USERS.alice.id,
-        DEMO_USERS.hugo.id,
-        DEMO_USERS.sarah.id,
-      ],
+      participantIds: [DEMO_USERS.hugo.id, DEMO_USERS.sarah.id],
       maxParticipants: 50,
       organizer: getOrganizer(DEMO_USERS.alice),
       location: {

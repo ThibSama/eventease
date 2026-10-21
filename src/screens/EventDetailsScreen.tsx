@@ -132,6 +132,7 @@ export function EventDetailsScreen({
 
   // --- Participants et capacité ---------------------------------------------
 
+  // L'organisateur est lié à l'événement séparément et n'occupe aucune place.
   const participantCount = event.participantIds.length;
 
   const eventIsFull =
@@ -185,7 +186,9 @@ export function EventDetailsScreen({
 
   let participationLabel = "PARTICIPATION OUVERTE";
 
-  if (isParticipating) {
+  if (isOrganizer) {
+    participationLabel = eventPast ? "VOUS AVEZ ORGANISÉ" : "VOUS ORGANISEZ";
+  } else if (isParticipating) {
     participationLabel = eventPast ? "VOUS AVEZ PARTICIPÉ" : "VOUS PARTICIPEZ";
   } else if (eventPast) {
     participationLabel = "NON PARTICIPÉ";
@@ -216,8 +219,8 @@ export function EventDetailsScreen({
           <Text
             style={[
               styles.participation,
-              ((eventPast && !isParticipating) ||
-                (eventIsFull && !isParticipating)) &&
+              ((eventPast && !isParticipating && !isOrganizer) ||
+                (eventIsFull && !isParticipating && !isOrganizer)) &&
                 styles.participationMuted,
             ]}>
             {participationLabel}
@@ -290,7 +293,7 @@ export function EventDetailsScreen({
         {/* --- Actions ------------------------------------------------------ */}
 
         <View style={styles.actions}>
-          {eventPast ? (
+          {isOrganizer ? null : eventPast ? (
             <>
               <AppButton label="Événement passé" variant="inactive" />
 

@@ -261,6 +261,11 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
+    // L'organisateur fait déjà partie de l'événement et n'occupe aucune place.
+    if (currentEvent.organizer.userId === user.id) {
+      return;
+    }
+
     // Une participation est figée dès que l'événement est passé.
     if (isEventPast(currentEvent.date, currentEvent.time)) {
       return;

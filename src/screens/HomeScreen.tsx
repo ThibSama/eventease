@@ -63,6 +63,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
   const followingEvents = upcomingEvents.slice(1, 1 + FOLLOWING_EVENTS_LIMIT);
 
+  // Les événements organisés ne sont pas comptés comme des participations.
   const joinedCount = user
     ? upcomingEvents.filter((event) => event.participantIds.includes(user.id))
         .length
@@ -70,6 +71,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
   const nextEventJoined = Boolean(
     nextEvent && user && nextEvent.participantIds.includes(user.id),
+  );
+
+  const nextEventOrganized = Boolean(
+    nextEvent && user && nextEvent.organizer.userId === user.id,
   );
 
   // --- Prochain événement : distance et météo -------------------------------
@@ -194,16 +199,22 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <View
                 style={[
                   styles.participationDot,
-                  nextEventJoined && styles.participationDotJoined,
+                  (nextEventJoined || nextEventOrganized) &&
+                    styles.participationDotJoined,
                 ]}
               />
 
               <Text
                 style={[
                   styles.participationText,
-                  nextEventJoined && styles.participationTextJoined,
+                  (nextEventJoined || nextEventOrganized) &&
+                    styles.participationTextJoined,
                 ]}>
-                {nextEventJoined ? "Vous participez" : "À venir"}
+                {nextEventOrganized
+                  ? "Vous organisez"
+                  : nextEventJoined
+                    ? "Vous participez"
+                    : "À venir"}
               </Text>
             </View>
           </Pressable>

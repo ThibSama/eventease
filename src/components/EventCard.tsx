@@ -46,6 +46,8 @@ export function EventCard({
 
   const eventPast = isEventPast(event.date, event.time);
 
+  const isOrganizer = Boolean(user && event.organizer.userId === user.id);
+
   const isParticipating = Boolean(
     user && event.participantIds.includes(user.id),
   );
@@ -115,7 +117,9 @@ export function EventCard({
             tone={eventPast ? "past" : "upcoming"}
           />
 
-          {isParticipating ? (
+          {isOrganizer ? (
+            <Badge label="Organisateur" tone="joined" />
+          ) : isParticipating ? (
             <Badge label={eventPast ? "Participé" : "Inscrit"} tone="joined" />
           ) : null}
         </View>
