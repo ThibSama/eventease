@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "src/assets/images/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "eventease",
     "ios": {
       "supportsTablet": true
     },
@@ -30,7 +29,6 @@
           "imageWidth": 280
         }
       ],
-      "expo-font",
       "expo-image",
       [
         "expo-location",
@@ -38,8 +36,7 @@
           "locationWhenInUsePermission": "Autoriser EventEase à utiliser votre position pour calculer la distance jusqu’aux événements."
         }
       ],
-      "expo-status-bar",
-      "expo-web-browser"
+      "expo-status-bar"
     ]
   }
 }
