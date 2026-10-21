@@ -56,7 +56,13 @@ export function ProfileScreen() {
 
   // --- Statistiques ----------------------------------------------------------
 
-  const joinedCount = events.filter((event) => event.participated).length;
+  const joinedCount = user
+    ? events.filter((event) => event.participantIds.includes(user.id)).length
+    : 0;
+
+  const organizedCount = user
+    ? events.filter((event) => event.organizer.userId === user.id).length
+    : 0;
 
   // --- Rendu -----------------------------------------------------------------
 
@@ -89,11 +95,12 @@ export function ProfileScreen() {
 
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>
-            {events.length} événement{events.length > 1 ? "s" : ""}
+            {joinedCount} participation{joinedCount > 1 ? "s" : ""}
           </Text>
 
           <Text style={styles.panelText}>
-            {joinedCount} participation{joinedCount > 1 ? "s" : ""}
+            {organizedCount} événement{organizedCount > 1 ? "s" : ""} organisé
+            {organizedCount > 1 ? "s" : ""}
           </Text>
         </View>
 

@@ -11,11 +11,11 @@ import type { Event, EventOrganizer, User } from "../types";
 // ============================================================================
 
 const STORAGE_VERSION_KEY = "@eventease/storage-version";
-const STORAGE_VERSION = "2";
+const STORAGE_VERSION = "3";
 
-const USERS_KEY = "@eventease/v2/users";
-const SESSION_KEY = "@eventease/v2/session";
-const EVENTS_KEY = "@eventease/v2/events";
+const USERS_KEY = "@eventease/v3/users";
+const SESSION_KEY = "@eventease/v3/session";
+const EVENTS_KEY = "@eventease/v3/events";
 
 const EVENTEASE_ORGANIZER: EventOrganizer = {
   userId: "eventease",
@@ -33,7 +33,8 @@ export async function initializeStorage() {
     return;
   }
 
-  // Le passage en version 2 repart volontairement d'un stockage propre.
+  // La version 3 introduit les participants individuels et la capacité.
+  // Les anciennes données de test sont volontairement supprimées.
   const storedKeys = await AsyncStorage.getAllKeys();
 
   const eventEaseKeys = storedKeys.filter((key) =>
@@ -78,7 +79,8 @@ function createDemoEvents(): Event[] {
         "Une conférence autour de React Native, Expo et du développement d'applications mobiles multiplateformes.",
       date: getRelativeDate(1),
       time: "14:30",
-      participated: false,
+      participantIds: [],
+      maxParticipants: 30,
       organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Cambrai, Hauts-de-France, France",
@@ -93,7 +95,8 @@ function createDemoEvents(): Event[] {
         "Un atelier pratique pour découvrir Docker, conteneuriser une application et manipuler une API.",
       date: getRelativeDate(3),
       time: "10:00",
-      participated: true,
+      participantIds: [],
+      maxParticipants: 12,
       organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Lille, Hauts-de-France, France",
@@ -108,7 +111,7 @@ function createDemoEvents(): Event[] {
         "Une soirée conviviale autour de jeux multijoueurs organisée par l'association.",
       date: getRelativeDate(7),
       time: "19:00",
-      participated: false,
+      participantIds: [],
       organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Douai, Hauts-de-France, France",
@@ -123,7 +126,8 @@ function createDemoEvents(): Event[] {
         "Une rencontre entre les membres de l'association pour présenter les activités et les prochains événements.",
       date: getRelativeDate(-5),
       time: "18:30",
-      participated: true,
+      participantIds: [],
+      maxParticipants: 50,
       organizer: EVENTEASE_ORGANIZER,
       location: {
         name: "Valenciennes, Hauts-de-France, France",

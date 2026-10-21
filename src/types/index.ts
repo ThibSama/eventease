@@ -36,12 +36,13 @@ export type Event = {
   description: string;
   date: string;
   time: string;
-  participated: boolean;
+  participantIds: string[];
+  maxParticipants?: number;
   location?: EventLocation;
   organizer: EventOrganizer;
 };
 
-export type NewEvent = Omit<Event, "organizer">;
+export type NewEvent = Omit<Event, "organizer" | "participantIds">;
 
 export type EventFormValues = {
   title: string;
@@ -49,6 +50,7 @@ export type EventFormValues = {
   date: string;
   time: string;
   locationName: string;
+  maxParticipants?: number;
 };
 
 // ============================================================================

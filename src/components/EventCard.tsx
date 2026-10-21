@@ -5,6 +5,7 @@
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { useApp } from "../hooks/useApp";
 import type { UserCoordinates } from "../hooks/useLocation";
 import { colors, radius } from "../theme";
 import type { Event } from "../types";
@@ -39,9 +40,15 @@ export function EventCard({
   dateFormat = "day",
   onPress,
 }: EventCardProps) {
+  const { user } = useApp();
+
   // --- État de l'événement ---------------------------------------------------
 
   const eventPast = isEventPast(event.date, event.time);
+
+  const isParticipating = Boolean(
+    user && event.participantIds.includes(user.id),
+  );
 
   // --- Lieu et distance ------------------------------------------------------
 
@@ -108,7 +115,7 @@ export function EventCard({
             tone={eventPast ? "past" : "upcoming"}
           />
 
-          {event.participated ? (
+          {isParticipating ? (
             <Badge label={eventPast ? "Participé" : "Inscrit"} tone="joined" />
           ) : null}
         </View>

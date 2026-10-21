@@ -16,7 +16,7 @@ import {
 } from "../services/storage";
 import type { Event, NewEvent, User } from "../types";
 import { createUserId } from "../utils/user";
-import { isEventPast } from "../utils/validation";
+import { isEventPast, isValidEventCapacity } from "../utils/validation";
 
 // ============================================================================
 // TYPES
@@ -174,12 +174,13 @@ export function AppProvider({ children }: AppProviderProps) {
   // --- Création --------------------------------------------------------------
 
   async function addEvent(event: NewEvent) {
-    if (!user) {
+    if (!user || !isValidEventCapacity(event.maxParticipants)) {
       return;
     }
 
     const createdEvent: Event = {
       ...event,
+      participantIds: [],
       organizer: {
         userId: user.id,
         username: user.username,
@@ -195,7 +196,7 @@ export function AppProvider({ children }: AppProviderProps) {
   // --- Modification ----------------------------------------------------------
 
   async function updateEvent(event: Event) {
-    if (!user) {
+    if (!user || !isValidEventCapacity(event.maxParticipants)) {
       return;
     }
 
@@ -207,10 +208,18 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
+    if (
+      event.maxParticipants !== undefined &&
+      event.maxParticipants < currentEvent.participantIds.length
+    ) {
+      return;
+    }
+
     const updatedEvents = events.map((existingEvent) =>
       existingEvent.id === event.id
         ? {
             ...event,
+            participantIds: currentEvent.participantIds,
             organizer: currentEvent.organizer,
           }
         : existingEvent,
@@ -257,14 +266,31 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
-    const updatedEvents = events.map((event) =>
-      event.id === id
-        ? {
-            ...event,
-            participated: !event.participated,
-          }
-        : event,
-    );
+    const isParticipating = currentEvent.participantIds.includes(user.id);
+
+    const eventIsFull =
+      currentEvent.maxParticipants !== undefined &&
+      currentEvent.participantIds.length >= currentEvent.maxParticipants;
+
+    // Un participant déjà inscrit peut toujours libérer sa place.
+    if (!isParticipating && eventIsFull) {
+      return;
+    }
+
+    const updatedEvents = events.map((event) => {
+      if (event.id !== id) {
+        return event;
+      }
+
+      return {
+        ...event,
+        participantIds: isParticipating
+          ? event.participantIds.filter(
+              (participantId) => participantId !== user.id,
+            )
+          : [...event.participantIds, user.id],
+      };
+    });
 
     setEvents(updatedEvents);
     await saveEvents(updatedEvents);

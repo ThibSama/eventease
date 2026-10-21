@@ -123,6 +123,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         date: values.date,
         time: values.time,
         location,
+        maxParticipants: values.maxParticipants,
       });
 
       navigation.goBack();
@@ -135,8 +136,8 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
       description: values.description,
       date: values.date,
       time: values.time,
-      participated: false,
       location,
+      maxParticipants: values.maxParticipants,
     };
 
     await addEvent(event);
@@ -153,6 +154,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
         date: existingEvent.date,
         time: existingEvent.time,
         locationName: existingEvent.location?.name ?? "",
+        maxParticipants: existingEvent.maxParticipants,
       }
     : undefined;
 
@@ -175,6 +177,7 @@ export function EventFormScreen({ navigation, route }: EventFormScreenProps) {
 
           <EventForm
             initialValues={initialValues}
+            currentParticipantCount={existingEvent?.participantIds.length ?? 0}
             submitLabel={
               existingEvent
                 ? "Enregistrer les modifications"

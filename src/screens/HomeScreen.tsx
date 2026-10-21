@@ -37,7 +37,7 @@ type HomeScreenProps = CompositeScreenProps<
 >;
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTES
 // ============================================================================
 
 const FOLLOWING_EVENTS_LIMIT = 3;
@@ -47,7 +47,7 @@ const FOLLOWING_EVENTS_LIMIT = 3;
 // ============================================================================
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
-  const { events } = useApp();
+  const { user, events } = useApp();
 
   // --- Localisation utilisateur ---------------------------------------------
 
@@ -63,9 +63,14 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
   const followingEvents = upcomingEvents.slice(1, 1 + FOLLOWING_EVENTS_LIMIT);
 
-  const joinedCount = upcomingEvents.filter(
-    (event) => event.participated,
-  ).length;
+  const joinedCount = user
+    ? upcomingEvents.filter((event) => event.participantIds.includes(user.id))
+        .length
+    : 0;
+
+  const nextEventJoined = Boolean(
+    nextEvent && user && nextEvent.participantIds.includes(user.id),
+  );
 
   // --- Prochain événement : distance et météo -------------------------------
 
@@ -189,16 +194,16 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
               <View
                 style={[
                   styles.participationDot,
-                  nextEvent.participated && styles.participationDotJoined,
+                  nextEventJoined && styles.participationDotJoined,
                 ]}
               />
 
               <Text
                 style={[
                   styles.participationText,
-                  nextEvent.participated && styles.participationTextJoined,
+                  nextEventJoined && styles.participationTextJoined,
                 ]}>
-                {nextEvent.participated ? "Vous participez" : "À venir"}
+                {nextEventJoined ? "Vous participez" : "À venir"}
               </Text>
             </View>
           </Pressable>

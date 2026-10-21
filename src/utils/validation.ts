@@ -25,6 +25,9 @@ export const EVENT_DESCRIPTION_MAX_LENGTH = 500;
 export const EVENT_LOCATION_MIN_LENGTH = 2;
 export const EVENT_LOCATION_MAX_LENGTH = 120;
 
+export const EVENT_CAPACITY_MIN = 1;
+export const EVENT_CAPACITY_MAX = 9999;
+
 // ============================================================================
 // VALIDATION DE L'AUTHENTIFICATION
 // ============================================================================
@@ -99,6 +102,20 @@ export function isValidEventLocation(location: string) {
   return (
     normalizedLocation.length >= EVENT_LOCATION_MIN_LENGTH &&
     normalizedLocation.length <= EVENT_LOCATION_MAX_LENGTH
+  );
+}
+
+// --- Capacité ----------------------------------------------------------------
+
+export function isValidEventCapacity(capacity?: number) {
+  if (capacity === undefined) {
+    return true;
+  }
+
+  return (
+    Number.isInteger(capacity) &&
+    capacity >= EVENT_CAPACITY_MIN &&
+    capacity <= EVENT_CAPACITY_MAX
   );
 }
 

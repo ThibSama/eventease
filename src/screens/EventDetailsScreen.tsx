@@ -51,6 +51,10 @@ export function EventDetailsScreen({
     event && user && event.organizer.userId === user.id,
   );
 
+  const isParticipating = Boolean(
+    event && user && event.participantIds.includes(user.id),
+  );
+
   // --- Localisation utilisateur ---------------------------------------------
 
   const { coordinates, status: locationStatus } = useLocation();
@@ -126,6 +130,21 @@ export function EventDetailsScreen({
     );
   }
 
+  // --- Participants et capacité ---------------------------------------------
+
+  const participantCount = event.participantIds.length;
+
+  const eventIsFull =
+    event.maxParticipants !== undefined &&
+    participantCount >= event.maxParticipants;
+
+  const participantWord = participantCount > 1 ? "participants" : "participant";
+
+  const capacityLabel =
+    event.maxParticipants !== undefined
+      ? `${participantCount} / ${event.maxParticipants} place${event.maxParticipants > 1 ? "s" : ""}`
+      : `${participantCount} ${participantWord} · places illimitées`;
+
   // --- Distance --------------------------------------------------------------
 
   const distance = getEventDistanceKm(event, coordinates);
@@ -166,10 +185,12 @@ export function EventDetailsScreen({
 
   let participationLabel = "PARTICIPATION OUVERTE";
 
-  if (event.participated) {
+  if (isParticipating) {
     participationLabel = eventPast ? "VOUS AVEZ PARTICIPÉ" : "VOUS PARTICIPEZ";
   } else if (eventPast) {
     participationLabel = "NON PARTICIPÉ";
+  } else if (eventIsFull) {
+    participationLabel = "ÉVÉNEMENT COMPLET";
   }
 
   // --- Rendu -----------------------------------------------------------------
@@ -195,7 +216,9 @@ export function EventDetailsScreen({
           <Text
             style={[
               styles.participation,
-              eventPast && !event.participated && styles.participationMuted,
+              ((eventPast && !isParticipating) ||
+                (eventIsFull && !isParticipating)) &&
+                styles.participationMuted,
             ]}>
             {participationLabel}
           </Text>
@@ -219,9 +242,15 @@ export function EventDetailsScreen({
         )}
 
         <View style={styles.organizer}>
-          <Text style={styles.organizerLabel}>ORGANISÉ PAR</Text>
+          <Text style={styles.metaLabel}>ORGANISÉ PAR</Text>
 
           <Text style={styles.organizerName}>@{event.organizer.username}</Text>
+        </View>
+
+        <View style={styles.capacity}>
+          <Text style={styles.metaLabel}>PARTICIPANTS</Text>
+
+          <Text style={styles.capacityValue}>{capacityLabel}</Text>
         </View>
 
         {distanceLabel || weatherStatus !== "idle" ? (
@@ -269,14 +298,16 @@ export function EventDetailsScreen({
                 Cet événement ne peut plus être rejoint.
               </Text>
             </>
+          ) : eventIsFull && !isParticipating ? (
+            <AppButton label="Événement complet" variant="inactive" />
           ) : (
             <AppButton
               label={
-                event.participated
+                isParticipating
                   ? "Annuler ma participation"
                   : "Rejoindre l’événement"
               }
-              variant={event.participated ? "secondary" : "primary"}
+              variant={isParticipating ? "secondary" : "primary"}
               onPress={handleToggleParticipated}
             />
           )}
@@ -407,7 +438,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.card,
   },
-  organizerLabel: {
+  capacity: {
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+  },
+  metaLabel: {
     color: colors.textMuted,
     fontSize: 10,
     fontWeight: "700",
@@ -415,6 +455,12 @@ const styles = StyleSheet.create({
   organizerName: {
     marginTop: 4,
     color: colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  capacityValue: {
+    marginTop: 4,
+    color: colors.text,
     fontSize: 14,
     fontWeight: "700",
   },
