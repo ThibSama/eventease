@@ -11,16 +11,36 @@ import type { Event, EventOrganizer, User } from "../types";
 // ============================================================================
 
 const STORAGE_VERSION_KEY = "@eventease/storage-version";
-const STORAGE_VERSION = "3";
+const STORAGE_VERSION = "4";
 
-const USERS_KEY = "@eventease/v3/users";
-const SESSION_KEY = "@eventease/v3/session";
-const EVENTS_KEY = "@eventease/v3/events";
+const USERS_KEY = "@eventease/v4/users";
+const SESSION_KEY = "@eventease/v4/session";
+const EVENTS_KEY = "@eventease/v4/events";
 
-const EVENTEASE_ORGANIZER: EventOrganizer = {
-  userId: "eventease",
-  username: "EventEase",
-};
+// ============================================================================
+// UTILISATEURS DE DÉMONSTRATION
+// ============================================================================
+
+const DEMO_USERS = {
+  alice: {
+    id: "demo-user-alice",
+    username: "alice.martin",
+    email: "alice@eventease.demo",
+    password: "demo123",
+  },
+  hugo: {
+    id: "demo-user-hugo",
+    username: "hugo.leroy",
+    email: "hugo@eventease.demo",
+    password: "demo123",
+  },
+  sarah: {
+    id: "demo-user-sarah",
+    username: "sarah.dupont",
+    email: "sarah@eventease.demo",
+    password: "demo123",
+  },
+} satisfies Record<string, User>;
 
 // ============================================================================
 // INITIALISATION DU STOCKAGE
@@ -33,8 +53,9 @@ export async function initializeStorage() {
     return;
   }
 
-  // La version 3 introduit les participants individuels et la capacité.
-  // Les anciennes données de test sont volontairement supprimées.
+  // La version 4 introduit des comptes de démonstration et une activité
+  // multi-utilisateurs cohérente. Les anciennes données de test sont
+  // volontairement supprimées.
   const storedKeys = await AsyncStorage.getAllKeys();
 
   const eventEaseKeys = storedKeys.filter((key) =>
@@ -45,7 +66,14 @@ export async function initializeStorage() {
     await AsyncStorage.multiRemove(eventEaseKeys);
   }
 
-  await AsyncStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+  const demoUsers = createDemoUsers();
+  const demoEvents = createDemoEvents();
+
+  await Promise.all([
+    AsyncStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION),
+    saveUsers(demoUsers),
+    saveEvents(demoEvents),
+  ]);
 }
 
 // ============================================================================
@@ -66,9 +94,24 @@ function getRelativeDate(dayOffset: number) {
   return `${year}-${month}-${day}`;
 }
 
+function getOrganizer(user: User): EventOrganizer {
+  return {
+    userId: user.id,
+    username: user.username,
+  };
+}
+
 // ============================================================================
-// ÉVÉNEMENTS DE DÉMONSTRATION
+// DONNÉES DE DÉMONSTRATION
 // ============================================================================
+
+// --- Utilisateurs ------------------------------------------------------------
+
+function createDemoUsers(): User[] {
+  return [DEMO_USERS.alice, DEMO_USERS.hugo, DEMO_USERS.sarah];
+}
+
+// --- Événements --------------------------------------------------------------
 
 function createDemoEvents(): Event[] {
   return [
@@ -79,9 +122,9 @@ function createDemoEvents(): Event[] {
         "Une conférence autour de React Native, Expo et du développement d'applications mobiles multiplateformes.",
       date: getRelativeDate(1),
       time: "14:30",
-      participantIds: [],
+      participantIds: [DEMO_USERS.hugo.id, DEMO_USERS.sarah.id],
       maxParticipants: 30,
-      organizer: EVENTEASE_ORGANIZER,
+      organizer: getOrganizer(DEMO_USERS.alice),
       location: {
         name: "Cambrai, Hauts-de-France, France",
         latitude: 50.1767,
@@ -95,9 +138,9 @@ function createDemoEvents(): Event[] {
         "Un atelier pratique pour découvrir Docker, conteneuriser une application et manipuler une API.",
       date: getRelativeDate(3),
       time: "10:00",
-      participantIds: [],
-      maxParticipants: 12,
-      organizer: EVENTEASE_ORGANIZER,
+      participantIds: [DEMO_USERS.alice.id, DEMO_USERS.sarah.id],
+      maxParticipants: 3,
+      organizer: getOrganizer(DEMO_USERS.hugo),
       location: {
         name: "Lille, Hauts-de-France, France",
         latitude: 50.6292,
@@ -111,8 +154,8 @@ function createDemoEvents(): Event[] {
         "Une soirée conviviale autour de jeux multijoueurs organisée par l'association.",
       date: getRelativeDate(7),
       time: "19:00",
-      participantIds: [],
-      organizer: EVENTEASE_ORGANIZER,
+      participantIds: [DEMO_USERS.alice.id, DEMO_USERS.hugo.id],
+      organizer: getOrganizer(DEMO_USERS.sarah),
       location: {
         name: "Douai, Hauts-de-France, France",
         latitude: 50.3707,
@@ -126,9 +169,13 @@ function createDemoEvents(): Event[] {
         "Une rencontre entre les membres de l'association pour présenter les activités et les prochains événements.",
       date: getRelativeDate(-5),
       time: "18:30",
-      participantIds: [],
+      participantIds: [
+        DEMO_USERS.alice.id,
+        DEMO_USERS.hugo.id,
+        DEMO_USERS.sarah.id,
+      ],
       maxParticipants: 50,
-      organizer: EVENTEASE_ORGANIZER,
+      organizer: getOrganizer(DEMO_USERS.alice),
       location: {
         name: "Valenciennes, Hauts-de-France, France",
         latitude: 50.357,
@@ -149,9 +196,17 @@ export async function saveUsers(users: User[]) {
 export async function getUsers(): Promise<User[]> {
   const value = await AsyncStorage.getItem(USERS_KEY);
 
+  // --- Premier lancement ou stockage incomplet -------------------------------
+
   if (!value) {
-    return [];
+    const demoUsers = createDemoUsers();
+
+    await saveUsers(demoUsers);
+
+    return demoUsers;
   }
+
+  // --- Chargement ------------------------------------------------------------
 
   try {
     const users = JSON.parse(value) as User[];
@@ -199,7 +254,7 @@ export async function saveEvents(events: Event[]) {
 export async function getEvents(): Promise<Event[]> {
   const value = await AsyncStorage.getItem(EVENTS_KEY);
 
-  // --- Premier lancement -----------------------------------------------------
+  // --- Premier lancement ou stockage incomplet -------------------------------
 
   if (!value) {
     const demoEvents = createDemoEvents();
