@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "eventease",
+    "name": "EventEase",
     "slug": "eventease",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "src/assets/images/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "scheme": "eventease",
     "ios": {
       "supportsTablet": true
@@ -13,7 +13,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "monochromeImage": "src/assets/images/monochrome-icon.png",
+        "backgroundColor": "#071017"
       }
     },
     "web": {
@@ -24,12 +25,19 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "src/assets/images/splash-icon.png"
+          "backgroundColor": "#071017",
+          "image": "src/assets/images/splash-icon.png",
+          "imageWidth": 280
         }
       ],
       "expo-font",
       "expo-image",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Autoriser EventEase à utiliser votre position pour calculer la distance jusqu’aux événements."
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser"
     ]
