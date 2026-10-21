@@ -3,10 +3,12 @@
 // ============================================================================
 
 import { Picker } from "@react-native-picker/picker";
+import { Image } from "expo-image";
 import { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
 
+import { calendarTheme, colors } from "../theme";
 import type { EventFormValues } from "../types";
 import {
   EVENT_DESCRIPTION_MAX_LENGTH,
@@ -20,6 +22,7 @@ import {
   isValidEventLocation,
   isValidEventTitle,
 } from "../utils/validation";
+import { AppButton } from "./AppButton";
 
 // ============================================================================
 // TYPES
@@ -42,6 +45,18 @@ const HOURS = Array.from({ length: 24 }, (_, index) =>
 const MINUTES = Array.from({ length: 60 }, (_, index) =>
   String(index).padStart(2, "0"),
 );
+
+// Le sélecteur de date du formulaire est plus compact que l'écran Calendrier.
+const FORM_CALENDAR_THEME = {
+  ...calendarTheme,
+  textDayFontSize: 11,
+  textMonthFontSize: 15,
+  textDayHeaderFontSize: 11,
+  textDayHeaderFontWeight: "400",
+} as const;
+
+// Seul Android affiche une liste déroulante fermée : iOS et le web gardent leur rendu natif.
+const SHOW_PICKER_CHEVRON = Platform.OS === "android";
 
 // ============================================================================
 // UTILITAIRES
@@ -172,7 +187,8 @@ export function EventForm({
         style={styles.input}
         value={title}
         onChangeText={setTitle}
-        placeholder="Titre de l'événement"
+        placeholder="Ex. Atelier Docker"
+        placeholderTextColor={colors.textMuted}
         maxLength={EVENT_TITLE_MAX_LENGTH}
       />
 
@@ -186,7 +202,8 @@ export function EventForm({
         style={[styles.input, styles.description]}
         value={description}
         onChangeText={setDescription}
-        placeholder="Description"
+        placeholder="Décrivez votre événement…"
+        placeholderTextColor={colors.textMuted}
         maxLength={EVENT_DESCRIPTION_MAX_LENGTH}
         multiline
       />
@@ -198,6 +215,8 @@ export function EventForm({
       <Text style={styles.label}>Date</Text>
 
       <Calendar
+        style={styles.calendar}
+        theme={FORM_CALENDAR_THEME}
         current={date || today}
         minDate={today}
         firstDay={1}
@@ -219,63 +238,108 @@ export function EventForm({
         </Text>
       ) : null}
 
-      <Text style={styles.label}>Heure</Text>
+      <Text style={[styles.label, styles.timeLabel]}>Heure</Text>
 
       <View style={styles.timeSelector}>
-        <View style={styles.pickerContainer}>
+        <View style={[styles.pickerContainer, styles.hourPicker]}>
           <Picker
+            style={styles.picker}
+            itemStyle={styles.pickerItem}
+            dropdownIconColor={
+              SHOW_PICKER_CHEVRON ? "transparent" : colors.text
+            }
+            mode="dropdown"
+            accessibilityLabel="Heures"
             selectedValue={hour}
             onValueChange={(value) => {
               setHour(value);
               setError(null);
             }}>
             {HOURS.map((value) => (
-              <Picker.Item key={value} label={value} value={value} />
+              <Picker.Item
+                key={value}
+                label={value}
+                value={value}
+                color={Platform.OS === "ios" ? colors.text : undefined}
+              />
             ))}
           </Picker>
+
+          {SHOW_PICKER_CHEVRON ? (
+            <View style={styles.pickerChevron}>
+              <Image
+                source={require("../assets/images/design/icon-chevron-down.svg")}
+                style={styles.pickerChevronIcon}
+                contentFit="contain"
+              />
+            </View>
+          ) : null}
         </View>
 
-        <Text style={styles.timeSeparator}>:</Text>
-
-        <View style={styles.pickerContainer}>
+        <View style={[styles.pickerContainer, styles.minutePicker]}>
           <Picker
+            style={styles.picker}
+            itemStyle={styles.pickerItem}
+            dropdownIconColor={
+              SHOW_PICKER_CHEVRON ? "transparent" : colors.text
+            }
+            mode="dropdown"
+            accessibilityLabel="Minutes"
             selectedValue={minute}
             onValueChange={(value) => {
               setMinute(value);
               setError(null);
             }}>
             {MINUTES.map((value) => (
-              <Picker.Item key={value} label={value} value={value} />
+              <Picker.Item
+                key={value}
+                label={value}
+                value={value}
+                color={Platform.OS === "ios" ? colors.text : undefined}
+              />
             ))}
           </Picker>
+
+          {SHOW_PICKER_CHEVRON ? (
+            <View style={styles.pickerChevron}>
+              <Image
+                source={require("../assets/images/design/icon-chevron-down.svg")}
+                style={styles.pickerChevronIcon}
+                contentFit="contain"
+              />
+            </View>
+          ) : null}
         </View>
       </View>
 
-      <Text style={styles.selectedTime}>Heure sélectionnée : {time}</Text>
-
-      <Text style={styles.label}>Ville ou code postal</Text>
+      <Text style={[styles.label, styles.locationLabel]}>
+        Ville ou code postal
+      </Text>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.locationInput]}
         value={locationName}
         onChangeText={(value) => {
           setLocationName(value);
           setError(null);
         }}
-        placeholder="Ex. Cambrai ou 59400"
+        placeholder="Cambrai ou 59400"
+        placeholderTextColor={colors.textMuted}
         maxLength={EVENT_LOCATION_MAX_LENGTH}
         autoCapitalize="words"
       />
 
-      <Text style={styles.locationHelper}>Facultatif</Text>
+      <Text style={styles.helper}>Facultatif</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Button
-        title={submitLabel}
-        onPress={handleSubmit}
-        disabled={submitting}
-      />
+      <View style={styles.submit}>
+        <AppButton
+          label={submitLabel}
+          onPress={handleSubmit}
+          disabled={submitting}
+        />
+      </View>
     </View>
   );
 }
@@ -286,60 +350,104 @@ export function EventForm({
 
 const styles = StyleSheet.create({
   label: {
-    fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: 5,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
   },
   input: {
+    minHeight: 50,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 4,
+    borderColor: colors.border,
+    borderRadius: 9,
+    color: colors.text,
+    fontSize: 13,
   },
   description: {
-    minHeight: 100,
+    minHeight: 90,
     textAlignVertical: "top",
   },
   helper: {
-    fontSize: 12,
-    marginBottom: 16,
+    marginTop: 3,
+    marginBottom: 14,
+    color: colors.textSubtle,
+    fontSize: 10,
     textAlign: "right",
   },
+  calendar: {
+    paddingBottom: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
   selectedDate: {
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 8,
+    color: colors.textMuted,
+    fontSize: 12,
     textAlign: "center",
-    fontWeight: "500",
+  },
+  timeLabel: {
+    marginTop: 20,
   },
   timeSelector: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 8,
+    gap: 19,
   },
   pickerContainer: {
-    flex: 1,
+    minHeight: 45,
+    justifyContent: "center",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: 10,
     overflow: "hidden",
   },
-  timeSeparator: {
-    fontSize: 24,
-    fontWeight: "600",
+  hourPicker: {
+    flex: 153,
   },
-  selectedTime: {
-    textAlign: "center",
-    marginBottom: 16,
-    fontWeight: "500",
+  minutePicker: {
+    flex: 174,
   },
-  locationHelper: {
+  picker: {
+    color: colors.text,
+    backgroundColor: colors.surface,
+    borderWidth: 0,
+    fontSize: 15,
+    paddingHorizontal: 12,
+  },
+  pickerItem: {
+    height: 120,
+    color: colors.text,
+    fontSize: 15,
+  },
+  pickerChevron: {
+    position: "absolute",
+    right: 13,
+    pointerEvents: "none",
+  },
+  pickerChevronIcon: {
+    width: 19,
+    height: 19,
+  },
+  locationLabel: {
+    marginTop: 20,
+  },
+  locationInput: {
+    minHeight: 43,
+    paddingVertical: 11,
     fontSize: 12,
-    marginBottom: 16,
-    textAlign: "right",
   },
   error: {
-    marginBottom: 16,
+    marginBottom: 14,
+    color: colors.danger,
+    fontSize: 13,
     textAlign: "center",
+  },
+  submit: {
+    marginTop: 8,
   },
 });

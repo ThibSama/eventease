@@ -2,29 +2,52 @@
 // IMPORTS
 // ============================================================================
 
+import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import type { CompositeScreenProps } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Image } from "expo-image";
 import { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { EventCard } from "../components/EventCard";
 import { useApp } from "../hooks/useApp";
-import type { Event } from "../types";
+import { useLocation } from "../hooks/useLocation";
+import { calendarTheme, colors, radius, spacing } from "../theme";
+import type { AppTabParamList, RootStackParamList } from "../types";
+import { getIsoWeekNumber } from "../utils/eventDisplay";
 import {
   formatEventDate,
   getTodayDate,
-  isEventPast,
   sortEventsChronologically,
 } from "../utils/validation";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type CalendarScreenProps = CompositeScreenProps<
+  BottomTabScreenProps<AppTabParamList, "Calendar">,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 // ============================================================================
 // COMPOSANT
 // ============================================================================
 
-export function CalendarScreen() {
+export function CalendarScreen({ navigation }: CalendarScreenProps) {
   const { events } = useApp();
+
+  // --- Localisation utilisateur ---------------------------------------------
+
+  const { coordinates } = useLocation();
 
   // --- Date sélectionnée -----------------------------------------------------
 
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
+
+  const weekNumber = getIsoWeekNumber(selectedDate);
 
   // --- Événements du jour ----------------------------------------------------
 
@@ -58,68 +81,84 @@ export function CalendarScreen() {
     selected: true,
   };
 
-  // --- Sélection -------------------------------------------------------------
+  // --- Sélection et navigation ----------------------------------------------
 
   function handleDayPress(day: DateData) {
     setSelectedDate(day.dateString);
   }
 
-  // --- Rendu des événements --------------------------------------------------
+  function handleOpenEvent(id: string) {
+    navigation.navigate("EventDetails", { eventId: id });
+  }
 
-  function renderEvent({ item }: { item: Event }) {
-    const eventPast = isEventPast(item.date, item.time);
-
-    return (
-      <View style={styles.eventCard}>
-        <Text style={styles.eventTime}>{item.time}</Text>
-
-        <Text style={styles.eventTitle}>{item.title}</Text>
-
-        <Text style={styles.eventDescription}>{item.description}</Text>
-
-        <Text style={styles.status}>
-          Statut : {eventPast ? "Passé" : "À venir"}
-        </Text>
-
-        <Text style={styles.participation}>
-          Participation : {item.participated ? "Participé" : "Non participé"}
-        </Text>
-      </View>
-    );
+  function handleAddEvent() {
+    navigation.navigate("EventForm");
   }
 
   // --- Rendu -----------------------------------------------------------------
 
   return (
-    <View style={styles.container}>
-      <Calendar
-        current={selectedDate}
-        firstDay={1}
-        markedDates={markedDates}
-        onDayPress={handleDayPress}
-      />
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Calendrier</Text>
 
-      <View style={styles.selectedDay}>
-        <Text style={styles.selectedDayTitle}>
-          {formatEventDate(selectedDate)}
-        </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter un événement"
+            onPress={handleAddEvent}
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && styles.pressed,
+            ]}>
+            <Image
+              source={require("../assets/images/design/icon-add.svg")}
+              style={styles.addIcon}
+              contentFit="contain"
+            />
+          </Pressable>
+        </View>
+
+        <Calendar
+          style={styles.calendar}
+          theme={calendarTheme}
+          current={selectedDate}
+          firstDay={1}
+          markedDates={markedDates}
+          onDayPress={handleDayPress}
+        />
+
+        <View style={styles.selectedDay}>
+          <Text style={styles.selectedDayTitle}>
+            {formatEventDate(selectedDate)}
+          </Text>
+
+          {weekNumber !== null ? (
+            <Text style={styles.weekNumber}>SEMAINE {weekNumber}</Text>
+          ) : null}
+        </View>
 
         <Text style={styles.eventCount}>
-          {eventsForSelectedDate.length} événement
-          {eventsForSelectedDate.length > 1 ? "s" : ""}
+          {eventsForSelectedDate.length} ÉVÉNEMENT
+          {eventsForSelectedDate.length > 1 ? "S" : ""}
         </Text>
-      </View>
 
-      <FlatList
-        data={eventsForSelectedDate}
-        keyExtractor={(event) => event.id}
-        renderItem={renderEvent}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
+        <View style={styles.list}>
+          {eventsForSelectedDate.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              userCoordinates={coordinates}
+              onPress={handleOpenEvent}
+            />
+          ))}
+        </View>
+
+        {eventsForSelectedDate.length === 0 ? (
           <Text style={styles.empty}>Aucun événement à cette date.</Text>
-        }
-      />
-    </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -128,54 +167,85 @@ export function CalendarScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    padding: 16,
+    backgroundColor: colors.background,
+  },
+  content: {
+    width: "100%",
+    maxWidth: 520,
+    alignSelf: "center",
+    paddingHorizontal: spacing.screen,
+    paddingTop: 22,
+    paddingBottom: 32,
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  title: {
+    marginLeft: 2,
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+  },
+  addIcon: {
+    width: 22,
+    height: 22,
+  },
+  calendar: {
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.panel,
+    overflow: "hidden",
   },
   selectedDay: {
-    marginTop: 20,
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 26,
+    marginHorizontal: 2,
   },
   selectedDayTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 4,
+    color: colors.text,
+    fontSize: 19,
+    fontWeight: "700",
+  },
+  weekNumber: {
+    color: "#81a1b6",
+    fontSize: 11,
+    fontWeight: "700",
   },
   eventCount: {
-    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 12,
+    marginLeft: 2,
+    color: "#a7c4d4",
+    fontSize: 11,
+    fontWeight: "700",
   },
   list: {
-    paddingBottom: 24,
-  },
-  eventCard: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-  },
-  eventTime: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  eventDescription: {
-    marginBottom: 12,
-  },
-  status: {
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  participation: {
-    fontWeight: "500",
+    gap: 12,
   },
   empty: {
+    marginTop: 12,
+    color: colors.textMuted,
+    fontSize: 14,
     textAlign: "center",
-    marginTop: 24,
   },
 });
